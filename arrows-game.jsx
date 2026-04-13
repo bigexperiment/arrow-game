@@ -153,7 +153,10 @@ class SoundEngine {
         const delay = index * 0.12;
         osc.type = "sawtooth";
         osc.frequency.setValueAtTime(note, t + delay);
-        osc.frequency.exponentialRampToValueAtTime(note * 0.7, t + delay + 0.18);
+        osc.frequency.exponentialRampToValueAtTime(
+          note * 0.7,
+          t + delay + 0.18,
+        );
         gain.gain.setValueAtTime(0.05, t + delay);
         gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.22);
         osc.connect(gain).connect(ctx.destination);
@@ -198,10 +201,8 @@ const GLOWS = {
 };
 
 const SURFACE = {
-  page:
-    "radial-gradient(circle at 12% 10%, rgba(251,113,133,0.16), transparent 24%), radial-gradient(circle at 85% 12%, rgba(56,189,248,0.18), transparent 26%), radial-gradient(circle at 50% 100%, rgba(250,204,21,0.1), transparent 28%), linear-gradient(180deg, #09111d 0%, #0e1728 48%, #111827 100%)",
-  panel:
-    "linear-gradient(180deg, rgba(17,24,39,0.92), rgba(15,23,42,0.78))",
+  page: "radial-gradient(circle at 12% 10%, rgba(251,113,133,0.16), transparent 24%), radial-gradient(circle at 85% 12%, rgba(56,189,248,0.18), transparent 26%), radial-gradient(circle at 50% 100%, rgba(250,204,21,0.1), transparent 28%), linear-gradient(180deg, #09111d 0%, #0e1728 48%, #111827 100%)",
+  panel: "linear-gradient(180deg, rgba(17,24,39,0.92), rgba(15,23,42,0.78))",
   panelSoft:
     "linear-gradient(180deg, rgba(30,41,59,0.62), rgba(15,23,42,0.58))",
   chip: "rgba(255,255,255,0.07)",
@@ -210,7 +211,8 @@ const SURFACE = {
     "radial-gradient(circle at top, rgba(56,189,248,0.14), transparent 34%), radial-gradient(circle at 80% 20%, rgba(251,113,133,0.12), transparent 30%), linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.025))",
   primaryButton: "linear-gradient(135deg, #5eead4, #38bdf8 58%, #818cf8)",
   accentButton: "linear-gradient(135deg, #fb7185, #f59e0b)",
-  progress: "linear-gradient(90deg, #5eead4, #38bdf8 45%, #facc15 82%, #fb7185)",
+  progress:
+    "linear-gradient(90deg, #5eead4, #38bdf8 45%, #facc15 82%, #fb7185)",
 };
 
 const LEVEL_NAMES = [
@@ -391,7 +393,10 @@ function getLevelConfig(levelNumber) {
 
 function buildBlueprint(config) {
   return Array.from({ length: config.chainCount }, (_, chainId) => {
-    const length = randInt(config.chainLengthRange[0], config.chainLengthRange[1]);
+    const length = randInt(
+      config.chainLengthRange[0],
+      config.chainLengthRange[1],
+    );
     const frozenCount = Math.min(
       length - 1,
       randInt(config.frozenPerChain[0], config.frozenPerChain[1]),
@@ -415,9 +420,13 @@ function anyExistingArrowSeesCell(chains, target, ignoredKey = null) {
       while (inBounds(x, y, chain.cols, chain.rows)) {
         const currentKey = keyOf(x, y);
         if (x === target.x && y === target.y) return true;
-        if (chains.some((currentChain) =>
-          currentChain.cells.some((occupied) => keyOf(occupied.x, occupied.y) === currentKey),
-        )) {
+        if (
+          chains.some((currentChain) =>
+            currentChain.cells.some(
+              (occupied) => keyOf(occupied.x, occupied.y) === currentKey,
+            ),
+          )
+        ) {
           break;
         }
         x += dir.dx;
@@ -457,7 +466,12 @@ function buildChainFromStart(start, blueprint, config, chains) {
 
   function extend(index) {
     if (index === blueprint.length - 1) {
-      path[index].dir = chooseSafeTailDirection(path[index], chains, config.cols, config.rows);
+      path[index].dir = chooseSafeTailDirection(
+        path[index],
+        chains,
+        config.cols,
+        config.rows,
+      );
       return true;
     }
 
@@ -468,19 +482,27 @@ function buildChainFromStart(start, blueprint, config, chains) {
       const dir = DIRS[dirKey];
       for (let gap = config.gapRange[0]; gap <= config.gapRange[1]; gap += 1) {
         const step = gap + 1;
-        const next = { x: current.x + dir.dx * step, y: current.y + dir.dy * step };
+        const next = {
+          x: current.x + dir.dx * step,
+          y: current.y + dir.dy * step,
+        };
         if (!inBounds(next.x, next.y, config.cols, config.rows)) continue;
         if (occupied.has(keyOf(next.x, next.y))) continue;
-        if (path.some((cell) => cell.x === next.x && cell.y === next.y)) continue;
+        if (path.some((cell) => cell.x === next.x && cell.y === next.y))
+          continue;
 
         const between = rangeCells(current, next);
         const pathBlocked = between.some(({ x, y }) => {
           const key = keyOf(x, y);
-          return occupied.has(key) || path.some((cell) => keyOf(cell.x, cell.y) === key);
+          return (
+            occupied.has(key) ||
+            path.some((cell) => keyOf(cell.x, cell.y) === key)
+          );
         });
         if (pathBlocked) continue;
 
-        if (!config.interference && anyExistingArrowSeesCell(chains, next)) continue;
+        if (!config.interference && anyExistingArrowSeesCell(chains, next))
+          continue;
 
         candidates.push({ next, dirKey });
       }
@@ -512,13 +534,19 @@ function placeChains(config, blueprint) {
     for (const start of shuffle(allCells)) {
       const occupied = occupiedKeySet(chains);
       if (occupied.has(keyOf(start.x, start.y))) continue;
-      if (!config.interference && anyExistingArrowSeesCell(chains, start)) continue;
+      if (!config.interference && anyExistingArrowSeesCell(chains, start))
+        continue;
 
-      const candidate = buildChainFromStart(start, chainPlan, config, chains.map((chain) => ({
-        ...chain,
-        cols: config.cols,
-        rows: config.rows,
-      })));
+      const candidate = buildChainFromStart(
+        start,
+        chainPlan,
+        config,
+        chains.map((chain) => ({
+          ...chain,
+          cols: config.cols,
+          rows: config.rows,
+        })),
+      );
 
       if (candidate) {
         placed = {
@@ -601,9 +629,21 @@ function insertDecoys(chains, config) {
     const from = link.chain.cells[link.index];
     const to = link.chain.cells[link.index + 1];
     const dirToInsert =
-      insertCell.x > from.x ? "right" : insertCell.x < from.x ? "left" : insertCell.y > from.y ? "down" : "up";
+      insertCell.x > from.x
+        ? "right"
+        : insertCell.x < from.x
+          ? "left"
+          : insertCell.y > from.y
+            ? "down"
+            : "up";
     const dirToNext =
-      to.x > insertCell.x ? "right" : to.x < insertCell.x ? "left" : to.y > insertCell.y ? "down" : "up";
+      to.x > insertCell.x
+        ? "right"
+        : to.x < insertCell.x
+          ? "left"
+          : to.y > insertCell.y
+            ? "down"
+            : "up";
 
     const originalDir = from.dir;
     from.dir = dirToInsert;
@@ -649,7 +689,8 @@ function buildBoard(config) {
     const chains = placeChains(config, blueprint);
     if (!chains) continue;
     insertDecoys(chains, config);
-    if (!config.interference && hasCrossChainInterference(chains, config)) continue;
+    if (!config.interference && hasCrossChainInterference(chains, config))
+      continue;
     assignFrozenArrows(chains);
 
     const board = {};
@@ -685,12 +726,24 @@ function traceChain(board, startCell, cols, rows) {
   while (queue.length) {
     const { x, y, depth } = queue.shift();
     const key = keyOf(x, y);
-    if (seen.has(key) || !currentBoard[key] || currentBoard[key].state === "cleared") continue;
+    if (
+      seen.has(key) ||
+      !currentBoard[key] ||
+      currentBoard[key].state === "cleared"
+    )
+      continue;
 
     seen.add(key);
     const currentCell = currentBoard[key];
     const direction = DIRS[currentCell.dir];
-    sequence.push({ key, depth, x, y, dir: currentCell.dir, frozen: currentCell.frozen });
+    sequence.push({
+      key,
+      depth,
+      x,
+      y,
+      dir: currentCell.dir,
+      frozen: currentCell.frozen,
+    });
 
     let nextX = x + direction.dx;
     let nextY = y + direction.dy;
@@ -744,7 +797,8 @@ function isSolvable(board, config) {
     const tappable = Object.values(currentBoard).filter((cell) => !cell.frozen);
     for (const cell of tappable) {
       const nextBoard = applyTapToBoard(currentBoard, cell, config);
-      if (Object.keys(nextBoard).length === Object.keys(currentBoard).length) continue;
+      if (Object.keys(nextBoard).length === Object.keys(currentBoard).length)
+        continue;
       if (visit(nextBoard, tapsLeft - 1)) return true;
     }
 
@@ -984,20 +1038,21 @@ export default function ArrowsGame() {
       setParticles([]);
       setTrails([]);
       setCombo(null);
-      setToast(
-        {
-          text: `Level ${targetLevel} · Solve in ${config.optimalTaps} taps`,
-          tone: "guide",
-          duration: 1800,
-        },
-      );
+      setToast({
+        text: `Level ${targetLevel} · Solve in ${config.optimalTaps} taps`,
+        tone: "guide",
+        duration: 1800,
+      });
       setGameState("playing");
-      setScore(options.keepScore ? options.score ?? score : 0);
+      setScore(options.keepScore ? (options.score ?? score) : 0);
       setProgress((current) => ({
         ...current,
         currentLevel: targetLevel,
         bestLevel: Math.max(current.bestLevel, targetLevel),
-        bestScore: Math.max(current.bestScore, options.keepScore ? options.score ?? score : 0),
+        bestScore: Math.max(
+          current.bestScore,
+          options.keepScore ? (options.score ?? score) : 0,
+        ),
       }));
       if (!muted) sfx.prompt();
     },
@@ -1008,16 +1063,21 @@ export default function ArrowsGame() {
     const id = particleId.current++;
     setParticles((current) => [...current, { id, x, y, color }]);
     window.setTimeout(() => {
-      setParticles((current) => current.filter((particle) => particle.id !== id));
+      setParticles((current) =>
+        current.filter((particle) => particle.id !== id),
+      );
     }, 540);
   }, []);
 
   const addTrail = useCallback((x1, y1, x2, y2, color, delay) => {
     const id = trailId.current++;
     setTrails((current) => [...current, { id, x1, y1, x2, y2, color, delay }]);
-    window.setTimeout(() => {
-      setTrails((current) => current.filter((trail) => trail.id !== id));
-    }, (delay + 0.55) * 1000);
+    window.setTimeout(
+      () => {
+        setTrails((current) => current.filter((trail) => trail.id !== id));
+      },
+      (delay + 0.55) * 1000,
+    );
   }, []);
 
   const clearProgress = useCallback(() => {
@@ -1040,7 +1100,12 @@ export default function ArrowsGame() {
       setBusy(true);
       setTaps((value) => value - 1);
       if (!muted) sfx.tap();
-      const sequence = traceChain(board, cell, levelConfig.cols, levelConfig.rows);
+      const sequence = traceChain(
+        board,
+        cell,
+        levelConfig.cols,
+        levelConfig.rows,
+      );
 
       const cellSize = boardRef.current
         ? boardRef.current.getBoundingClientRect().width / levelConfig.cols
@@ -1051,7 +1116,9 @@ export default function ArrowsGame() {
         0,
       );
       const finalScore = score + gainedScore;
-      const maxDepth = sequence.length ? Math.max(...sequence.map((entry) => entry.depth)) : 0;
+      const maxDepth = sequence.length
+        ? Math.max(...sequence.map((entry) => entry.depth))
+        : 0;
       const scoreDelay = sequence.length ? maxDepth * 120 + 170 : 0;
 
       sequence.forEach(({ key, depth, x, y, dir }) => {
@@ -1085,7 +1152,8 @@ export default function ArrowsGame() {
 
       sequence.forEach(({ x, y, dir, depth }, index) => {
         const nextLink = sequence.find(
-          (entry, entryIndex) => entry.depth === depth + 1 && entryIndex > index,
+          (entry, entryIndex) =>
+            entry.depth === depth + 1 && entryIndex > index,
         );
         if (!nextLink) return;
         addTrail(
@@ -1099,21 +1167,27 @@ export default function ArrowsGame() {
       });
 
       if (maxDepth >= 2) {
-        window.setTimeout(() => {
-          if (!muted) sfx.combo(maxDepth);
-          if (!muted) sfx.celebrate(maxDepth);
-          setCombo({
-            value: sequence.length,
-            key: Date.now(),
-            text: pickMessage(COMBO_MESSAGES, level + sequence.length + maxDepth),
-          });
-          setToast({
-            text: pickMessage(COMBO_MESSAGES, sequence.length * 7 + level),
-            tone: "combo",
-            duration: 1500,
-          });
-          window.setTimeout(() => setCombo(null), 850);
-        }, maxDepth * 120 + 60);
+        window.setTimeout(
+          () => {
+            if (!muted) sfx.combo(maxDepth);
+            if (!muted) sfx.celebrate(maxDepth);
+            setCombo({
+              value: sequence.length,
+              key: Date.now(),
+              text: pickMessage(
+                COMBO_MESSAGES,
+                level + sequence.length + maxDepth,
+              ),
+            });
+            setToast({
+              text: pickMessage(COMBO_MESSAGES, sequence.length * 7 + level),
+              tone: "combo",
+              duration: 1500,
+            });
+            window.setTimeout(() => setCombo(null), 850);
+          },
+          maxDepth * 120 + 60,
+        );
       }
 
       const remainingTaps = taps - 1;
@@ -1162,11 +1236,23 @@ export default function ArrowsGame() {
         });
       }, totalDelay);
     },
-    [addBurst, addTrail, board, busy, gameState, level, levelConfig, muted, score, taps],
+    [
+      addBurst,
+      addTrail,
+      board,
+      busy,
+      gameState,
+      level,
+      levelConfig,
+      muted,
+      score,
+      taps,
+    ],
   );
 
   const remaining = useMemo(
-    () => Object.values(board).filter((cell) => cell.state !== "cleared").length,
+    () =>
+      Object.values(board).filter((cell) => cell.state !== "cleared").length,
     [board],
   );
   const cellSize = useMemo(() => {
@@ -1175,9 +1261,20 @@ export default function ArrowsGame() {
     const heightBudget = Math.min(viewport.height * 0.72, 720);
     return Math.max(
       34,
-      Math.floor(Math.min(widthBudget / levelConfig.cols, heightBudget / levelConfig.rows)),
+      Math.floor(
+        Math.min(
+          widthBudget / levelConfig.cols,
+          heightBudget / levelConfig.rows,
+        ),
+      ),
     );
-  }, [gameState, levelConfig.cols, levelConfig.rows, viewport.height, viewport.width]);
+  }, [
+    gameState,
+    levelConfig.cols,
+    levelConfig.rows,
+    viewport.height,
+    viewport.width,
+  ]);
 
   const boardWidth = levelConfig.cols * cellSize;
   const boardHeight = levelConfig.rows * cellSize;
@@ -1299,7 +1396,8 @@ export default function ArrowsGame() {
                   width: 124,
                   height: 124,
                   borderRadius: 999,
-                  background: "radial-gradient(circle, rgba(94,234,212,0.3), transparent 62%)",
+                  background:
+                    "radial-gradient(circle, rgba(94,234,212,0.3), transparent 62%)",
                 }}
               />
               <div
@@ -1310,7 +1408,8 @@ export default function ArrowsGame() {
                   width: 150,
                   height: 150,
                   borderRadius: 999,
-                  background: "radial-gradient(circle, rgba(251,113,133,0.22), transparent 66%)",
+                  background:
+                    "radial-gradient(circle, rgba(251,113,133,0.22), transparent 66%)",
                 }}
               />
               <div
@@ -1341,7 +1440,8 @@ export default function ArrowsGame() {
                 Arrow
                 <span
                   style={{
-                    background: "linear-gradient(135deg, #5eead4, #38bdf8 55%, #facc15)",
+                    background:
+                      "linear-gradient(135deg, #5eead4, #38bdf8 55%, #facc15)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                     textShadow: "0 0 28px rgba(56,189,248,0.14)",
@@ -1380,7 +1480,8 @@ export default function ArrowsGame() {
                     style={{
                       padding: "12px 10px",
                       borderRadius: 18,
-                      background: "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
+                      background:
+                        "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
                       border: `1px solid ${SURFACE.cardBorder}`,
                       boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
                     }}
@@ -1434,7 +1535,9 @@ export default function ArrowsGame() {
                     animation: "pulseGlow 2.6s ease-in-out infinite",
                   }}
                 >
-                  {canResume ? `Continue from level ${progress.currentLevel}` : "Start level 1"}
+                  {canResume
+                    ? `Continue from level ${progress.currentLevel}`
+                    : "Start level 1"}
                 </button>
 
                 <div
@@ -1454,7 +1557,8 @@ export default function ArrowsGame() {
                       minHeight: 48,
                       borderRadius: 14,
                       border: `1px solid ${SURFACE.cardBorder}`,
-                      background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
+                      background:
+                        "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
                       color: "#f8fafc",
                       fontWeight: 600,
                     }}
@@ -1472,7 +1576,8 @@ export default function ArrowsGame() {
                       minWidth: 70,
                       borderRadius: 14,
                       border: `1px solid ${SURFACE.cardBorder}`,
-                      background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
+                      background:
+                        "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
                       color: "rgba(255,255,255,0.9)",
                       fontWeight: 700,
                     }}
@@ -1515,7 +1620,8 @@ export default function ArrowsGame() {
                       width: 52,
                       height: 52,
                       borderRadius: 16,
-                      background: "linear-gradient(135deg, rgba(94,234,212,0.22), rgba(56,189,248,0.26), rgba(250,204,21,0.18))",
+                      background:
+                        "linear-gradient(135deg, rgba(94,234,212,0.22), rgba(56,189,248,0.26), rgba(250,204,21,0.18))",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -1526,11 +1632,16 @@ export default function ArrowsGame() {
                     {DIRS.up.symbol}
                   </div>
                   <div>
-                    <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 22 }}>
+                    <div
+                      style={{ fontFamily: "'Sora', sans-serif", fontSize: 22 }}
+                    >
                       Level {nextLevelPreview.levelNumber}
                     </div>
-                    <div style={{ color: "rgba(255,255,255,0.64)", marginTop: 4 }}>
-                      {nextLevelPreview.cols}x{nextLevelPreview.rows} board · {nextLevelPreview.taps} taps
+                    <div
+                      style={{ color: "rgba(255,255,255,0.64)", marginTop: 4 }}
+                    >
+                      {nextLevelPreview.cols}x{nextLevelPreview.rows} board ·{" "}
+                      {nextLevelPreview.taps} taps
                     </div>
                   </div>
                 </div>
@@ -1543,7 +1654,8 @@ export default function ArrowsGame() {
                     width: "100%",
                     borderRadius: 14,
                     border: `1px solid ${SURFACE.cardBorder}`,
-                    background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.035))",
+                    background:
+                      "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.035))",
                     color: "rgba(255,255,255,0.82)",
                   }}
                 >
@@ -1636,7 +1748,8 @@ export default function ArrowsGame() {
                       padding: "0 10px",
                       borderRadius: 12,
                       border: `1px solid ${SURFACE.cardBorder}`,
-                      background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
+                      background:
+                        "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
                       color: "#f8fafc",
                       fontSize: 13,
                     }}
@@ -1651,7 +1764,8 @@ export default function ArrowsGame() {
                       padding: "0 10px",
                       borderRadius: 12,
                       border: `1px solid ${SURFACE.cardBorder}`,
-                      background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
+                      background:
+                        "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
                       color: "#f8fafc",
                       fontSize: 13,
                     }}
@@ -1666,7 +1780,8 @@ export default function ArrowsGame() {
                       padding: "0 10px",
                       borderRadius: 12,
                       border: `1px solid ${SURFACE.cardBorder}`,
-                      background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
+                      background:
+                        "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
                       color: "#f8fafc",
                       fontSize: 13,
                     }}
@@ -1686,7 +1801,11 @@ export default function ArrowsGame() {
               >
                 {[
                   { label: "Level", value: level, color: "#93c5fd" },
-                  { label: "Taps", value: taps, color: taps <= 2 ? "#fb7185" : "#5eead4" },
+                  {
+                    label: "Taps",
+                    value: taps,
+                    color: taps <= 2 ? "#fb7185" : "#5eead4",
+                  },
                   { label: "Left", value: remaining, color: "#facc15" },
                 ].map((item) => (
                   <div
@@ -1694,7 +1813,8 @@ export default function ArrowsGame() {
                     style={{
                       padding: "8px 8px",
                       borderRadius: 14,
-                      background: "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035))",
+                      background:
+                        "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035))",
                       border: `1px solid ${SURFACE.cardBorder}`,
                     }}
                   >
@@ -1736,7 +1856,8 @@ export default function ArrowsGame() {
                   overflow: "hidden",
                   background: SURFACE.board,
                   border: `1px solid ${SURFACE.cardBorder}`,
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.09), 0 18px 40px rgba(0,0,0,0.18)",
+                  boxShadow:
+                    "inset 0 1px 0 rgba(255,255,255,0.09), 0 18px 40px rgba(0,0,0,0.18)",
                   touchAction: "manipulation",
                 }}
               >
@@ -1903,7 +2024,9 @@ export default function ArrowsGame() {
                     letterSpacing: "-0.05em",
                   }}
                 >
-                  {gameState === "win" ? `Level ${level} cleared` : "Out of taps"}
+                  {gameState === "win"
+                    ? `Level ${level} cleared`
+                    : "Out of taps"}
                 </div>
 
                 <p
@@ -1928,18 +2051,27 @@ export default function ArrowsGame() {
                 >
                   {[
                     { label: "Level", value: level },
-                    { label: "Next", value: gameState === "win" ? level + 1 : level },
+                    {
+                      label: "Next",
+                      value: gameState === "win" ? level + 1 : level,
+                    },
                   ].map((item) => (
                     <div
                       key={item.label}
                       style={{
                         padding: "10px 8px",
                         borderRadius: 16,
-                        background: "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035))",
+                        background:
+                          "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035))",
                         border: `1px solid ${SURFACE.cardBorder}`,
                       }}
                     >
-                      <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 20 }}>
+                      <div
+                        style={{
+                          fontFamily: "'Sora', sans-serif",
+                          fontSize: 20,
+                        }}
+                      >
                         {item.value}
                       </div>
                       <div
@@ -2011,7 +2143,8 @@ export default function ArrowsGame() {
                         minHeight: 46,
                         borderRadius: 16,
                         border: `1px solid ${SURFACE.cardBorder}`,
-                        background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
+                        background:
+                          "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
                         color: "#f8fafc",
                       }}
                     >
@@ -2025,7 +2158,8 @@ export default function ArrowsGame() {
                           minHeight: 46,
                           borderRadius: 16,
                           border: `1px solid ${SURFACE.cardBorder}`,
-                          background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
+                          background:
+                            "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
                           color: "#f8fafc",
                         }}
                       >
@@ -2039,7 +2173,8 @@ export default function ArrowsGame() {
                           minHeight: 46,
                           borderRadius: 16,
                           border: `1px solid ${SURFACE.cardBorder}`,
-                          background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
+                          background:
+                            "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
                           color: "#f8fafc",
                         }}
                       >
