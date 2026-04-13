@@ -16,8 +16,13 @@ export default defineConfig({
         display: "standalone",
         start_url: ".",
         icons: [
-          { src: "icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" }
-        ]
+          {
+            src: "icon.svg",
+            sizes: "any",
+            type: "image/svg+xml",
+            purpose: "any maskable",
+          },
+        ],
       },
       includeAssets: ["icon.svg"],
       filename: "manifest.webmanifest",
