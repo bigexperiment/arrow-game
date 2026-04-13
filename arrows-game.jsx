@@ -324,7 +324,7 @@ export default function ArrowsGame() {
             background:"linear-gradient(90deg,#00f5d4,#ffd60a,#ff006e,#8338ec)",backgroundSize:"200%",
             WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
             animation:"shimmer 3s linear infinite",marginBottom:2,
-          }}>ARROWS</h1>
+          }}>ArrowX</h1>
           <p style={{color:"rgba(255,255,255,.25)",fontSize:".55rem",letterSpacing:"5px",marginBottom:"2rem",fontWeight:500}}>
             CHAIN REACTION PUZZLE
           </p>
