@@ -674,12 +674,15 @@ function insertDecoys(chains, config) {
 }
 
 function assignFrozenArrows(chains) {
+  let frozenRemaining = 2;
   chains.forEach((chain) => {
+    if (frozenRemaining <= 0) return;
     const candidates = shuffle(chain.cells.slice(1));
-    const freezeCount = Math.min(chain.frozenCount, candidates.length);
+    const freezeCount = Math.min(chain.frozenCount, candidates.length, frozenRemaining);
     for (let index = 0; index < freezeCount; index += 1) {
       candidates[index].frozen = true;
     }
+    frozenRemaining -= freezeCount;
   });
 }
 
@@ -808,6 +811,60 @@ function isSolvable(board, config) {
   return visit(board, config.taps);
 }
 
+function findOptimalSolution(board, config, maxTaps = config.optimalTaps) {
+  const memo = new Map();
+
+  function visit(currentBoard, tapsLeft) {
+    if (Object.keys(currentBoard).length === 0) return [];
+    if (tapsLeft <= 0) return null;
+
+    const stateKey = boardStateKey(currentBoard, tapsLeft);
+    if (memo.has(stateKey)) return memo.get(stateKey);
+
+    let bestPath = null;
+    const tappable = Object.values(currentBoard)
+      .filter((cell) => !cell.frozen)
+      .sort((a, b) => a.y - b.y || a.x - b.x);
+
+    for (const cell of tappable) {
+      const nextBoard = applyTapToBoard(currentBoard, cell, config);
+      if (Object.keys(nextBoard).length === Object.keys(currentBoard).length) continue;
+
+      const remainder = visit(nextBoard, tapsLeft - 1);
+      if (!remainder) continue;
+
+      const candidate = [keyOf(cell.x, cell.y), ...remainder];
+      if (!bestPath || candidate.length < bestPath.length) {
+        bestPath = candidate;
+      }
+    }
+
+    memo.set(stateKey, bestPath);
+    return bestPath;
+  }
+
+  return visit(board, maxTaps);
+}
+
+function getDifficultyScore(board, config) {
+  const cells = Object.values(board);
+  const arrowCount = cells.length;
+  const frozenCount = cells.filter((cell) => cell.frozen).length;
+  const decoyCount = cells.filter((cell) => cell.decoy).length;
+  const density = arrowCount / Math.max(1, config.cols * config.rows);
+  const slack = Math.max(0, config.taps - config.optimalTaps);
+
+  const score =
+    config.optimalTaps * 14 +
+    decoyCount * 3 +
+    frozenCount * 6 +
+    Math.round(density * 18) +
+    Math.max(0, config.gapRange[1] - 1) * 4 -
+    slack * 5;
+
+  return Math.max(1, score);
+}
+
 function loadProgress() {
   if (typeof window === "undefined") return DEFAULT_PROGRESS;
   try {
@@ -904,35 +961,23 @@ function Arrow({ cell, size, onTap, disabled }) {
           width: size * 0.84,
           height: size * 0.84,
           borderRadius: size * 0.24,
-          border: `1.5px solid ${firing ? color : frozen ? "rgba(191,219,254,0.55)" : "rgba(255,255,255,0.08)"}`,
+          border: `1.5px solid ${firing ? color : frozen ? "rgba(191,219,254,0.28)" : "rgba(255,255,255,0.08)"}`,
           background: firing
             ? `linear-gradient(180deg, rgba(${glow},0.28), rgba(255,255,255,0.07))`
             : frozen
-              ? "linear-gradient(180deg, rgba(191,219,254,0.22), rgba(147,197,253,0.08))"
+              ? "linear-gradient(180deg, rgba(191,219,254,0.11), rgba(147,197,253,0.035))"
               : "linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03))",
           boxShadow: firing
             ? `0 0 ${size * 0.5}px rgba(${glow},0.36), inset 0 0 ${size * 0.2}px rgba(${glow},0.22)`
             : frozen
-              ? "0 0 18px rgba(147,197,253,0.14), inset 0 1px 0 rgba(255,255,255,0.14)"
+              ? "inset 0 1px 0 rgba(255,255,255,0.1)"
               : "inset 0 1px 0 rgba(255,255,255,0.08)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           backdropFilter: "blur(8px)",
-          overflow: "hidden",
         }}
       >
-        {frozen && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "repeating-linear-gradient(135deg, rgba(255,255,255,0.16) 0, rgba(255,255,255,0.16) 4px, transparent 4px, transparent 9px)",
-              opacity: 0.8,
-            }}
-          />
-        )}
         <svg
           width={size * 0.44}
           height={size * 0.44}
@@ -955,11 +1000,10 @@ function Arrow({ cell, size, onTap, disabled }) {
           <div
             style={{
               position: "absolute",
-              right: size * 0.1,
-              top: size * 0.08,
-              fontSize: size * 0.18,
-              color: "#eff6ff",
-              textShadow: "0 0 8px rgba(255,255,255,0.35)",
+              right: size * 0.12,
+              top: size * 0.1,
+              fontSize: size * 0.14,
+              color: "rgba(239,246,255,0.85)",
             }}
           >
             ❄
@@ -974,6 +1018,9 @@ export default function ArrowsGame() {
   const initialProgress = useMemo(() => loadProgress(), []);
   const [progress, setProgress] = useState(initialProgress);
   const [level, setLevel] = useState(initialProgress.currentLevel);
+  const [levelConfig, setLevelConfig] = useState(() =>
+    getLevelConfig(initialProgress.currentLevel),
+  );
   const [board, setBoard] = useState({});
   const [taps, setTaps] = useState(0);
   const [total, setTotal] = useState(0);
@@ -984,6 +1031,9 @@ export default function ArrowsGame() {
   const [combo, setCombo] = useState(null);
   const [score, setScore] = useState(0);
   const [toast, setToast] = useState(null);
+  const [autoSolveKeys, setAutoSolveKeys] = useState([]);
+  const [autoSolveTotal, setAutoSolveTotal] = useState(0);
+  const [autoDebugEnabled, setAutoDebugEnabled] = useState(false);
   const [muted, setMuted] = useState(initialProgress.muted);
   const [viewport, setViewport] = useState({
     width: typeof window === "undefined" ? 390 : window.innerWidth,
@@ -992,8 +1042,6 @@ export default function ArrowsGame() {
   const boardRef = useRef(null);
   const particleId = useRef(0);
   const trailId = useRef(0);
-
-  const levelConfig = useMemo(() => getLevelConfig(level), [level]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -1030,16 +1078,29 @@ export default function ArrowsGame() {
     (targetLevel, options = {}) => {
       const config = getLevelConfig(targetLevel);
       const nextBoard = genBoard(config);
+      const solution =
+        findOptimalSolution(nextBoard, { ...config, optimalTaps: config.taps }, config.taps) || [];
+      const resolvedConfig = {
+        ...config,
+        optimalTaps: solution.length > 0 ? solution.length : config.optimalTaps,
+      };
       setLevel(targetLevel);
+      setLevelConfig(resolvedConfig);
       setBoard(nextBoard);
-      setTaps(config.taps);
+      setTaps(resolvedConfig.taps);
       setTotal(Object.keys(nextBoard).length);
       setBusy(false);
       setParticles([]);
       setTrails([]);
       setCombo(null);
+      setAutoSolveKeys([]);
+      setAutoSolveTotal(0);
+      if (autoDebugEnabled) {
+        setAutoSolveTotal(solution.length);
+        setAutoSolveKeys(solution);
+      }
       setToast({
-        text: `Level ${targetLevel} · Solve in ${config.optimalTaps} taps`,
+        text: `Level ${targetLevel} · Solve in ${resolvedConfig.optimalTaps} taps`,
         tone: "guide",
         duration: 1800,
       });
@@ -1056,7 +1117,7 @@ export default function ArrowsGame() {
       }));
       if (!muted) sfx.prompt();
     },
-    [muted, score],
+    [autoDebugEnabled, muted, score],
   );
 
   const addBurst = useCallback((x, y, color) => {
@@ -1091,6 +1152,8 @@ export default function ArrowsGame() {
     setParticles([]);
     setTrails([]);
     setCombo(null);
+    setAutoSolveKeys([]);
+    setAutoSolveTotal(0);
   }, []);
 
   const handleTap = useCallback(
@@ -1250,11 +1313,92 @@ export default function ArrowsGame() {
     ],
   );
 
+  useEffect(() => {
+    if (autoSolveKeys.length === 0) return undefined;
+    if (busy || gameState !== "playing") return undefined;
+
+    const nextKey = autoSolveKeys[0];
+    const nextCell = board[nextKey];
+    const timer = window.setTimeout(() => {
+      const stepNumber = autoSolveTotal - autoSolveKeys.length + 1;
+      setToast({
+        text: `Debug tap ${stepNumber}/${autoSolveTotal}`,
+        tone: "guide",
+        duration: 900,
+      });
+      setAutoSolveKeys((current) => current.slice(1));
+      if (nextCell && !nextCell.frozen) handleTap(nextCell);
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, [autoSolveKeys, autoSolveTotal, board, busy, gameState, handleTap]);
+
+  useEffect(() => {
+    if (!autoDebugEnabled || gameState !== "win") return undefined;
+
+    const timer = window.setTimeout(() => {
+      startLevel(level + 1, {
+        keepScore: true,
+        score,
+      });
+    }, 700);
+
+    return () => window.clearTimeout(timer);
+  }, [autoDebugEnabled, gameState, level, score, startLevel]);
+
+  useEffect(() => {
+    if (!autoDebugEnabled || gameState !== "lose") return;
+    setAutoDebugEnabled(false);
+    setAutoSolveKeys([]);
+    setAutoSolveTotal(0);
+    setToast({
+      text: "Auto debug stopped on a failed board.",
+      tone: "lose",
+      duration: 1800,
+    });
+  }, [autoDebugEnabled, gameState]);
+
   const remaining = useMemo(
     () =>
       Object.values(board).filter((cell) => cell.state !== "cleared").length,
     [board],
   );
+  const debugDifficultyScore = useMemo(
+    () => getDifficultyScore(board, levelConfig),
+    [board, levelConfig],
+  );
+  const triggerAutoSolve = useCallback(() => {
+    if (autoDebugEnabled) {
+      setAutoDebugEnabled(false);
+      setAutoSolveKeys([]);
+      setAutoSolveTotal(0);
+      setToast({
+        text: "Auto debug stopped.",
+        tone: "guide",
+        duration: 1200,
+      });
+      return;
+    }
+
+    const solution = findOptimalSolution(board, levelConfig, taps);
+    if (!solution) {
+      setToast({
+        text: "No optimal path found for this board state.",
+        tone: "lose",
+        duration: 1800,
+      });
+      return;
+    }
+
+    setToast({
+      text: `Auto debug: solving in ${solution.length} taps · score ${debugDifficultyScore}`,
+      tone: "guide",
+      duration: 1600,
+    });
+    setAutoDebugEnabled(true);
+    setAutoSolveTotal(solution.length);
+    setAutoSolveKeys(solution);
+  }, [autoDebugEnabled, board, debugDifficultyScore, levelConfig, taps]);
   const cellSize = useMemo(() => {
     if (gameState === "menu") return 48;
     const widthBudget = Math.min(viewport.width - 18, 640);
@@ -1467,47 +1611,50 @@ export default function ArrowsGame() {
                 style={{
                   marginTop: 22,
                   display: "grid",
-                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  gridTemplateColumns: "1fr",
                   gap: 10,
                 }}
               >
-                {[
-                  { label: "Saved level", value: progress.currentLevel },
-                  { label: "Starting taps", value: nextLevelPreview.taps },
-                ].map((item) => (
+                <div
+                  style={{
+                    padding: "12px 10px",
+                    borderRadius: 18,
+                    background:
+                      "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
+                    border: `1px solid ${SURFACE.cardBorder}`,
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+                  }}
+                >
                   <div
-                    key={item.label}
                     style={{
-                      padding: "12px 10px",
-                      borderRadius: 18,
-                      background:
-                        "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
-                      border: `1px solid ${SURFACE.cardBorder}`,
-                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+                      fontFamily: "'Sora', sans-serif",
+                      fontSize: 22,
+                      color: "#f8fafc",
                     }}
                   >
-                    <div
-                      style={{
-                        fontFamily: "'Sora', sans-serif",
-                        fontSize: 22,
-                        color: "#f8fafc",
-                      }}
-                    >
-                      {item.value}
-                    </div>
-                    <div
-                      style={{
-                        marginTop: 4,
-                        fontSize: 11,
-                        color: "rgba(255,255,255,0.58)",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                      }}
-                    >
-                      {item.label}
-                    </div>
+                    {progress.currentLevel}
                   </div>
-                ))}
+                  <div
+                    style={{
+                      marginTop: 4,
+                      fontSize: 11,
+                      color: "rgba(255,255,255,0.58)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                    }}
+                  >
+                    Saved level
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 6,
+                      fontSize: 11,
+                      color: "rgba(255,255,255,0.5)",
+                    }}
+                  >
+                    Optimal solve: {nextLevelPreview.optimalTaps} taps
+                  </div>
+                </div>
               </div>
 
               <div
@@ -1635,7 +1782,7 @@ export default function ArrowsGame() {
                     <div
                       style={{ fontFamily: "'Sora', sans-serif", fontSize: 22 }}
                     >
-                      Level {nextLevelPreview.levelNumber}
+                      Level {nextLevelPreview.levelNumber}: {nextLevelPreview.title}
                     </div>
                     <div
                       style={{ color: "rgba(255,255,255,0.64)", marginTop: 4 }}
@@ -1735,7 +1882,37 @@ export default function ArrowsGame() {
                       lineHeight: 1,
                     }}
                   >
-                    Keep the chain alive
+                    {`Level ${level}: ${levelConfig.title}`}
+                    <span
+                      style={{
+                        marginLeft: 8,
+                        fontFamily: "'Space Grotesk', system-ui, sans-serif",
+                        fontSize: viewport.width < 420 ? 11 : 12,
+                        color: "rgba(255,255,255,0.46)",
+                        letterSpacing: "0.03em",
+                        fontWeight: 500,
+                      }}
+                    >
+                      optimal {levelConfig.optimalTaps} taps
+                    </span>
+                    {/*
+                    Debug-only score display. Keeping this commented so it is easy
+                    to restore later while hidden from normal gameplay.
+                    {autoDebugEnabled && (
+                      <span
+                        style={{
+                          marginLeft: 8,
+                          fontFamily: "'Space Grotesk', system-ui, sans-serif",
+                          fontSize: viewport.width < 420 ? 11 : 12,
+                          color: "rgba(94,234,212,0.72)",
+                          letterSpacing: "0.03em",
+                          fontWeight: 600,
+                        }}
+                      >
+                        debug score {debugDifficultyScore}
+                      </span>
+                    )}
+                    */}
                   </div>
                 </div>
 
@@ -1772,6 +1949,26 @@ export default function ArrowsGame() {
                   >
                     Restart
                   </button>
+                  {/*
+                  Debug-only autoplay control. Commented out for now so normal
+                  players do not see it, but the implementation remains easy to
+                  re-enable later.
+                  <button
+                    className="pressable"
+                    onClick={triggerAutoSolve}
+                    style={{
+                      minHeight: 36,
+                      padding: "0 10px",
+                      borderRadius: 12,
+                      border: "1px dashed rgba(255,255,255,0.18)",
+                      background: "rgba(255,255,255,0.035)",
+                      color: "rgba(255,255,255,0.72)",
+                      fontSize: 12,
+                    }}
+                  >
+                    {autoDebugEnabled ? "Stop auto debug" : "Auto debug"}
+                  </button>
+                  */}
                   <button
                     className="pressable"
                     onClick={() => setMuted((value) => !value)}

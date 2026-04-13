@@ -369,12 +369,15 @@ function insertDecoys(chains, config) {
 }
 
 function assignFrozenArrows(chains) {
+  let frozenRemaining = 2;
   chains.forEach((chain) => {
+    if (frozenRemaining <= 0) return;
     const candidates = shuffle(chain.cells.slice(1));
-    const freezeCount = Math.min(chain.frozenCount, candidates.length);
+    const freezeCount = Math.min(chain.frozenCount, candidates.length, frozenRemaining);
     for (let index = 0; index < freezeCount; index += 1) {
       candidates[index].frozen = true;
     }
+    frozenRemaining -= freezeCount;
   });
 }
 
@@ -476,20 +479,86 @@ function isSolvable(board, config) {
   return visit(board, config.taps);
 }
 
-function summarize(level, samples, failures) {
+function findOptimalSolution(board, config, maxTaps = config.optimalTaps) {
+  const memo = new Map();
+
+  function visit(currentBoard, tapsLeft) {
+    if (Object.keys(currentBoard).length === 0) return [];
+    if (tapsLeft <= 0) return null;
+
+    const stateKey = boardStateKey(currentBoard, tapsLeft);
+    if (memo.has(stateKey)) return memo.get(stateKey);
+
+    let bestPath = null;
+    const tappable = Object.values(currentBoard)
+      .filter((cell) => !cell.frozen)
+      .sort((a, b) => a.y - b.y || a.x - b.x);
+
+    for (const cell of tappable) {
+      const nextBoard = applyTap(currentBoard, cell, config);
+      if (Object.keys(nextBoard).length === Object.keys(currentBoard).length) continue;
+      const remainder = visit(nextBoard, tapsLeft - 1);
+      if (!remainder) continue;
+      const candidate = [keyOf(cell.x, cell.y), ...remainder];
+      if (!bestPath || candidate.length < bestPath.length) {
+        bestPath = candidate;
+      }
+    }
+
+    memo.set(stateKey, bestPath);
+    return bestPath;
+  }
+
+  return visit(board, maxTaps);
+}
+
+function getDifficultyScore(board, config) {
+  const cells = Object.values(board);
+  const arrowCount = cells.length;
+  const frozenCount = cells.filter((cell) => cell.frozen).length;
+  const decoyCount = cells.filter((cell) => cell.decoy).length;
+  const density = arrowCount / Math.max(1, config.cols * config.rows);
+  const slack = Math.max(0, config.taps - config.optimalTaps);
+
+  const score =
+    config.optimalTaps * 14 +
+    decoyCount * 3 +
+    frozenCount * 6 +
+    Math.round(density * 18) +
+    Math.max(0, config.gapRange[1] - 1) * 4 -
+    slack * 5;
+
+  return Math.max(1, score);
+}
+
+function summarize(level, samples, failures, metrics) {
   const status = failures.length === 0 ? "PASS" : "FAIL";
   console.log(`${status} level ${level}: tested ${samples}, failures ${failures.length}`);
+  if (metrics.length > 0) {
+    const optimals = metrics.map((entry) => entry.optimal);
+    const scores = metrics.map((entry) => entry.score);
+    const avgOptimal = optimals.reduce((sum, value) => sum + value, 0) / optimals.length;
+    const avgScore = scores.reduce((sum, value) => sum + value, 0) / scores.length;
+    console.log(
+      `  optimal taps min/avg/max: ${Math.min(...optimals)}/${avgOptimal.toFixed(2)}/${Math.max(...optimals)}`,
+    );
+    console.log(
+      `  difficulty score min/avg/max: ${Math.min(...scores)}/${avgScore.toFixed(2)}/${Math.max(...scores)}`,
+    );
+  }
   if (failures.length > 0) {
     console.log(`  first failing config: ${JSON.stringify(failures[0])}`);
   }
 }
 
 const failures = [];
-const perLevelSamples = 120;
-const maxLevel = 16;
+const allMetrics = [];
+const perLevelSamples = 100;
+const maxLevel = 20;
 
 for (let level = 1; level <= maxLevel; level += 1) {
   const levelFailures = [];
+  const levelMetrics = [];
   for (let sample = 0; sample < perLevelSamples; sample += 1) {
     const config = getLevelConfig(level);
     const board = buildBoard(config);
@@ -504,9 +573,18 @@ for (let level = 1; level <= maxLevel; level += 1) {
         config,
         board: Object.values(board),
       });
+      continue;
     }
+    const optimalPath = findOptimalSolution(board, config, config.taps);
+    const optimalTaps = optimalPath ? optimalPath.length : null;
+    const difficultyScore = getDifficultyScore(board, {
+      ...config,
+      optimalTaps: optimalTaps ?? config.optimalTaps,
+    });
+    levelMetrics.push({ optimal: optimalTaps ?? -1, score: difficultyScore });
+    allMetrics.push({ level, optimal: optimalTaps ?? -1, score: difficultyScore });
   }
-  summarize(level, perLevelSamples, levelFailures);
+  summarize(level, perLevelSamples, levelFailures, levelMetrics);
   failures.push(...levelFailures.map((failure) => ({ level, ...failure })));
 }
 
@@ -516,3 +594,10 @@ if (failures.length > 0) {
 }
 
 console.log(`\nAll ${perLevelSamples * maxLevel} generated boards were solvable within tap budget.`);
+if (allMetrics.length > 0) {
+  const avgOptimal = allMetrics.reduce((sum, entry) => sum + entry.optimal, 0) / allMetrics.length;
+  const avgScore = allMetrics.reduce((sum, entry) => sum + entry.score, 0) / allMetrics.length;
+  console.log(
+    `Overall optimal taps avg: ${avgOptimal.toFixed(2)} | overall difficulty score avg: ${avgScore.toFixed(2)}`,
+  );
+}
