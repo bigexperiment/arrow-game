@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 
 /* ── Audio Engine (Web Audio API — zero external deps) ── */
 class SoundEngine {
@@ -147,15 +147,17 @@ const GLW = {
 };
 
 const LEVELS = [
-  { name: "SPARK", cols: 5, rows: 5, fill: 0.55, taps: 7 },
-  { name: "EMBER", cols: 5, rows: 6, fill: 0.55, taps: 8 },
-  { name: "FLAME", cols: 6, rows: 6, fill: 0.58, taps: 9 },
-  { name: "BLAZE", cols: 6, rows: 7, fill: 0.6, taps: 9 },
+  { name: "SPARK", cols: 5, rows: 5, fill: 0.5, taps: 8 },
+  { name: "EMBER", cols: 5, rows: 6, fill: 0.53, taps: 8 },
+  { name: "FLAME", cols: 6, rows: 6, fill: 0.56, taps: 9 },
+  { name: "BLAZE", cols: 6, rows: 7, fill: 0.58, taps: 9 },
   { name: "INFERNO", cols: 7, rows: 7, fill: 0.6, taps: 10 },
-  { name: "NOVA", cols: 7, rows: 8, fill: 0.63, taps: 11 },
-  { name: "PULSAR", cols: 8, rows: 8, fill: 0.65, taps: 11 },
-  { name: "QUASAR", cols: 8, rows: 10, fill: 0.68, taps: 12 },
+  { name: "NOVA", cols: 7, rows: 8, fill: 0.62, taps: 10 },
+  { name: "PULSAR", cols: 8, rows: 8, fill: 0.64, taps: 11 },
+  { name: "QUASAR", cols: 8, rows: 9, fill: 0.66, taps: 11 },
 ];
+
+const PROGRESS_KEY = "arrowx_unlocked_level";
 
 function genBoard(cols, rows, fill) {
   const b = {},
@@ -309,12 +311,11 @@ export default function ArrowsGame() {
   const [board, setBoard] = useState({});
   const [taps, setTaps] = useState(0);
   const [total, setTotal] = useState(0);
-  const [gs, setGs] = useState("menu");
+  const [gs, setGs] = useState("playing");
   const [busy, setBusy] = useState(false);
   const [parts, setParts] = useState([]);
   const [trails, setTrails] = useState([]);
   const [cmb, setCmb] = useState(null);
-  const [score, setScore] = useState(0);
   const [muted, setMuted] = useState(false);
   const ref = useRef(null);
   const pid = useRef(0),
@@ -333,9 +334,16 @@ export default function ArrowsGame() {
     setParts([]);
     setTrails([]);
     setCmb(null);
-    setScore(0);
     setLi(idx);
   }, []);
+
+  useEffect(() => {
+    const saved = Number(localStorage.getItem(PROGRESS_KEY) ?? "0");
+    const startLevel = Number.isFinite(saved)
+      ? Math.max(0, Math.min(saved, LEVELS.length - 1))
+      : 0;
+    start(startLevel);
+  }, [start]);
 
   const addBurst = useCallback((cx, cy, color) => {
     const id = pid.current++;
@@ -407,7 +415,6 @@ export default function ArrowsGame() {
           });
           if (!muted) sfx.clear(depth);
           addBurst(x * csz + h, y * csz + h, COL[dir]);
-          setScore((s) => s + (depth + 1) * 15);
         }, dl + 170);
       });
 
@@ -446,6 +453,10 @@ export default function ArrowsGame() {
           ).length;
           if (rem === 0)
             setTimeout(() => {
+              const unlocked = Number(localStorage.getItem(PROGRESS_KEY) ?? "0");
+              if (li < LEVELS.length - 1 && li + 1 > unlocked) {
+                localStorage.setItem(PROGRESS_KEY, String(li + 1));
+              }
               setGs("win");
               if (!muted) sfx.win();
             }, 150);
@@ -463,7 +474,6 @@ export default function ArrowsGame() {
 
   const rem = Object.values(board).filter((c) => c.state !== "cleared").length;
   const csz = (() => {
-    if (gs === "menu") return 40;
     const mw = Math.min(window.innerWidth - 24, 440);
     const mh = window.innerHeight * 0.52;
     return Math.floor(Math.min(mw / lv.cols, mh / lv.rows));
@@ -514,193 +524,8 @@ export default function ArrowsGame() {
         }}
       />
 
-      {/* ═══ MENU ═══ */}
-      {gs === "menu" && (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "100vh",
-            padding: "1.5rem",
-            width: "100%",
-            animation: "fadeUp .5s ease",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "3.2rem",
-              fontWeight: 900,
-              letterSpacing: "-3px",
-              display: "flex",
-              gap: 2,
-              marginBottom: 4,
-            }}
-          >
-            {["↗", "→", "↘", "↓"].map((a, i) => (
-              <span
-                key={i}
-                style={{
-                  color: Object.values(COL)[i],
-                  animation: `spinin .4s ${i * 0.08}s ease both`,
-                  display: "inline-block",
-                }}
-              >
-                {a}
-              </span>
-            ))}
-          </div>
-          <h1
-            style={{
-              fontSize: "1.7rem",
-              fontWeight: 900,
-              letterSpacing: "-1px",
-              background:
-                "linear-gradient(90deg,#00f5d4,#ffd60a,#ff006e,#8338ec)",
-              backgroundSize: "200%",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              animation: "shimmer 3s linear infinite",
-              marginBottom: 2,
-            }}
-          >
-            ArrowX
-          </h1>
-          <p
-            style={{
-              color: "rgba(255,255,255,.25)",
-              fontSize: ".55rem",
-              letterSpacing: "5px",
-              marginBottom: "2rem",
-              fontWeight: 500,
-            }}
-          >
-            CHAIN REACTION PUZZLE
-          </p>
-
-          <button
-            onClick={() => {
-              sfx.init();
-              setMuted((m) => !m);
-            }}
-            className="bh"
-            style={{
-              background: "rgba(255,255,255,.03)",
-              border: "1px solid rgba(255,255,255,.07)",
-              borderRadius: 20,
-              padding: "5px 14px",
-              color: "rgba(255,255,255,.35)",
-              fontFamily: "inherit",
-              fontSize: ".6rem",
-              cursor: "pointer",
-              marginBottom: "1.2rem",
-              fontWeight: 500,
-            }}
-          >
-            {muted ? "🔇 OFF" : "🔊 ON"}
-          </button>
-
-          <div
-            style={{ display: "grid", gap: 7, width: "100%", maxWidth: 330 }}
-          >
-            {LEVELS.map((l, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  sfx.init();
-                  start(i);
-                }}
-                className="bh"
-                style={{
-                  background: "rgba(255,255,255,.025)",
-                  border: "1px solid rgba(255,255,255,.05)",
-                  borderRadius: 13,
-                  padding: "13px 14px",
-                  color: "#fff",
-                  fontFamily: "inherit",
-                  fontSize: ".75rem",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  transition: "all .15s",
-                  animation: `fadeUp .35s ${i * 0.04}s ease both`,
-                }}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                  <span
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 7,
-                      background: `linear-gradient(135deg,${Object.values(COL)[i % 4]}18,${Object.values(COL)[i % 4]}55)`,
-                      border: `1px solid ${Object.values(COL)[i % 4]}33`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: ".55rem",
-                      fontWeight: 800,
-                      color: Object.values(COL)[i % 4],
-                    }}
-                  >
-                    {i + 1}
-                  </span>
-                  {l.name}
-                </span>
-                <span
-                  style={{
-                    color: "rgba(255,255,255,.18)",
-                    fontSize: ".55rem",
-                    fontWeight: 400,
-                  }}
-                >
-                  {l.cols}×{l.rows} · {l.taps} taps
-                </span>
-              </button>
-            ))}
-          </div>
-
-          <div
-            style={{
-              marginTop: "1.8rem",
-              padding: "14px 18px",
-              background: "rgba(255,255,255,.015)",
-              borderRadius: 13,
-              border: "1px solid rgba(255,255,255,.04)",
-              maxWidth: 330,
-              width: "100%",
-            }}
-          >
-            <div
-              style={{
-                fontSize: ".58rem",
-                fontWeight: 700,
-                color: "rgba(255,255,255,.4)",
-                letterSpacing: "2px",
-                marginBottom: 6,
-              }}
-            >
-              HOW TO PLAY
-            </div>
-            <div
-              style={{
-                fontSize: ".65rem",
-                color: "rgba(255,255,255,.28)",
-                lineHeight: 1.7,
-              }}
-            >
-              Tap an arrow to fire it. It shoots forward and triggers any arrow
-              it hits, creating chain reactions. Clear every arrow before
-              running out of taps.
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ═══ GAMEPLAY ═══ */}
-      {gs !== "menu" && (
+      {gs && (
         <div
           style={{
             display: "flex",
@@ -712,6 +537,39 @@ export default function ArrowsGame() {
             animation: "fadeUp .3s ease",
           }}
         >
+          <div
+            style={{
+              width: "100%",
+              borderRadius: 14,
+              marginBottom: 8,
+              padding: "10px 12px",
+              background:
+                "linear-gradient(135deg,rgba(0,245,212,.08),rgba(131,56,236,.08))",
+              border: "1px solid rgba(255,255,255,.08)",
+              boxShadow: "0 8px 24px rgba(0,0,0,.28)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: ".52rem",
+                letterSpacing: "2.5px",
+                color: "rgba(255,255,255,.36)",
+                marginBottom: 3,
+                fontWeight: 700,
+              }}
+            >
+              ARROWX · CHAIN REACTION
+            </div>
+            <div
+              style={{
+                fontSize: ".62rem",
+                color: "rgba(255,255,255,.64)",
+              }}
+            >
+              Clear every arrow before your moves run out.
+            </div>
+          </div>
+
           {/* top bar */}
           <div
             style={{
@@ -723,7 +581,7 @@ export default function ArrowsGame() {
             }}
           >
             <button
-              onClick={() => setGs("menu")}
+              onClick={() => start(li)}
               className="bh"
               style={{
                 background: "rgba(255,255,255,.03)",
@@ -738,7 +596,7 @@ export default function ArrowsGame() {
                 letterSpacing: "1px",
               }}
             >
-              ‹ BACK
+              ↺ RESET
             </button>
             <span
               style={{
@@ -799,9 +657,8 @@ export default function ArrowsGame() {
             }}
           >
             {[
-              { l: "TAPS", v: taps, c: taps <= 2 ? "#ff006e" : "#00f5d4" },
-              { l: "LEFT", v: rem, c: "#ffd60a" },
-              { l: "SCORE", v: score, c: "#8338ec" },
+              { l: "MOVES", v: taps, c: taps <= 2 ? "#ff006e" : "#00f5d4" },
+              { l: "ARROWS", v: rem, c: "#ffd60a" },
             ].map(({ l: label, v, c }) => (
               <div key={label} style={{ textAlign: "center" }}>
                 <div
@@ -860,6 +717,12 @@ export default function ArrowsGame() {
               width: bw,
               height: bh,
               animation: "fadeUp .35s ease",
+              borderRadius: 14,
+              border: "1px solid rgba(255,255,255,.07)",
+              background:
+                "radial-gradient(circle at 20% 15%, rgba(255,255,255,.06), rgba(255,255,255,.015) 45%, rgba(255,255,255,.01))",
+              boxShadow: "inset 0 0 30px rgba(255,255,255,.03), 0 10px 24px rgba(0,0,0,.28)",
+              overflow: "hidden",
             }}
           >
             <svg
@@ -969,23 +832,13 @@ export default function ArrowsGame() {
               </div>
               <div
                 style={{
-                  fontSize: "1.8rem",
-                  fontWeight: 800,
-                  color: "#8338ec",
-                  marginBottom: 4,
-                }}
-              >
-                {score}
-              </div>
-              <div
-                style={{
-                  fontSize: ".55rem",
+                  fontSize: ".65rem",
                   color: "rgba(255,255,255,.25)",
-                  letterSpacing: "3px",
+                  letterSpacing: "2px",
                   marginBottom: 28,
                 }}
               >
-                {taps} TAPS REMAINING
+                {taps} MOVES LEFT · {rem} ARROWS LEFT
               </div>
               <div style={{ display: "flex", gap: 10 }}>
                 <button
@@ -1025,23 +878,6 @@ export default function ArrowsGame() {
                   </button>
                 )}
               </div>
-              <button
-                onClick={() => setGs("menu")}
-                className="bh"
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "rgba(255,255,255,.2)",
-                  fontFamily: "inherit",
-                  fontSize: ".55rem",
-                  cursor: "pointer",
-                  marginTop: 14,
-                  letterSpacing: "2px",
-                  fontWeight: 500,
-                }}
-              >
-                MENU
-              </button>
             </div>
           )}
 
@@ -1069,7 +905,7 @@ export default function ArrowsGame() {
                   letterSpacing: "-1px",
                 }}
               >
-                NO TAPS LEFT
+                GAME OVER
               </div>
               <div
                 style={{
@@ -1078,26 +914,9 @@ export default function ArrowsGame() {
                   marginBottom: 28,
                 }}
               >
-                {rem} arrows left · Score: {score}
+                {rem} arrows left · No moves remaining
               </div>
               <div style={{ display: "flex", gap: 10 }}>
-                <button
-                  onClick={() => setGs("menu")}
-                  className="bh"
-                  style={{
-                    background: "rgba(255,255,255,.04)",
-                    border: "1px solid rgba(255,255,255,.1)",
-                    borderRadius: 13,
-                    padding: "13px 26px",
-                    color: "#fff",
-                    fontFamily: "inherit",
-                    fontSize: ".78rem",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  MENU
-                </button>
                 <button
                   onClick={() => start(li)}
                   className="bh"
