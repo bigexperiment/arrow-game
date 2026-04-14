@@ -165,6 +165,67 @@ class SoundEngine {
       });
     });
   }
+
+  // Procedural background music — 16-note pentatonic loop
+  startMusic() {
+    this.init();
+    this.resume();
+    if (this._musicOn) return;
+    this._musicOn = true;
+    this._musicIndex = 0;
+    this._scheduleMusicNote();
+  }
+
+  _scheduleMusicNote() {
+    if (!this._musicOn) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    // C-major pentatonic ascending/descending arc
+    const MELODY = [523, 659, 523, 440, 392, 440, 523, 659, 784, 659, 523, 659, 523, 440, 392, 330];
+    const BASS   = [131, 0,   0,   0,   196, 0,   0,   0,   131, 0,   0,   0,   196, 0,   0,   0];
+    const NOTE_LEN = 0.22; // seconds per note (~136 BPM 8th notes)
+
+    const hz     = MELODY[this._musicIndex % MELODY.length];
+    const bassHz = BASS[this._musicIndex % BASS.length];
+
+    // Melody — soft triangle wave
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(hz, t);
+    gain.gain.setValueAtTime(0.038, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + NOTE_LEN * 0.82);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + NOTE_LEN * 0.82);
+
+    // Bass — sine wave on strong beats only
+    if (bassHz > 0) {
+      const bassOsc  = ctx.createOscillator();
+      const bassGain = ctx.createGain();
+      bassOsc.type = "sine";
+      bassOsc.frequency.setValueAtTime(bassHz, t);
+      bassGain.gain.setValueAtTime(0.028, t);
+      bassGain.gain.exponentialRampToValueAtTime(0.001, t + NOTE_LEN * 1.6);
+      bassOsc.connect(bassGain).connect(ctx.destination);
+      bassOsc.start(t);
+      bassOsc.stop(t + NOTE_LEN * 1.6);
+    }
+
+    this._musicIndex += 1;
+    this._musicTimer = window.setTimeout(
+      () => this._scheduleMusicNote(),
+      NOTE_LEN * 1000,
+    );
+  }
+
+  stopMusic() {
+    this._musicOn = false;
+    if (this._musicTimer) {
+      window.clearTimeout(this._musicTimer);
+      this._musicTimer = null;
+    }
+  }
 }
 
 const sfx = new SoundEngine();
@@ -928,7 +989,8 @@ function Burst({ x, y, color }) {
   );
 }
 
-function Arrow({ cell, size, onTap, disabled }) {
+function Arrow({ cell, size, onTap, onFrozenTap, disabled }) {
+  const [shaking, setShaking] = useState(false);
   const direction = DIRS[cell.dir];
   const color = COLORS[cell.dir];
   const glow = GLOWS[cell.dir];
@@ -937,90 +999,111 @@ function Arrow({ cell, size, onTap, disabled }) {
   const firing = cell.state === "firing";
   const frozen = Boolean(cell.frozen);
 
+  const handleClick = () => {
+    if (cleared) return;
+    if (frozen) {
+      if (!shaking) {
+        setShaking(true);
+        window.setTimeout(() => setShaking(false), 500);
+      }
+      onFrozenTap?.();
+      return;
+    }
+    if (!disabled) onTap(cell);
+  };
+
   return (
-    <button
-      onClick={() => !disabled && !cleared && !frozen && onTap(cell)}
-      disabled={disabled || cleared || frozen}
+    // Outer wrapper: handles grid position + shake animation (separate from scale transform)
+    <div
       style={{
         position: "absolute",
         left: cell.x * size,
         top: cell.y * size,
         width: size,
         height: size,
-        border: "none",
-        background: "transparent",
-        padding: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: cleared || frozen ? "default" : "pointer",
-        opacity: cleared ? 0 : 1,
-        transform: cleared ? "scale(0.1)" : firing ? "scale(1.12)" : "scale(1)",
-        transition: cleared
-          ? "transform .42s cubic-bezier(.2,.9,.2,1), opacity .35s ease"
-          : "transform .12s ease",
-        zIndex: firing ? 5 : 2,
+        zIndex: firing ? 5 : frozen ? 3 : 2,
+        animation: shaking ? "frozenShake 0.48s ease" : undefined,
       }}
     >
-      <div
+      <button
+        onClick={handleClick}
+        disabled={disabled && !frozen}
         style={{
-          width: size * 0.84,
-          height: size * 0.84,
-          borderRadius: size * 0.24,
-          border: firing
-            ? `3px solid ${candy.rim}`
-            : frozen
-              ? "3px solid #1d4ed8"
-              : `3px solid ${candy.rim}`,
-          background: firing
-            ? `linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.0) 38%), linear-gradient(145deg, ${candy.hi}, ${candy.mid}, ${candy.lo})`
-            : frozen
-              ? "linear-gradient(160deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.08) 40%), linear-gradient(145deg, #bfdbfe, #93c5fd, #3b82f6)"
-              : `linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.0) 38%), linear-gradient(145deg, ${candy.hi}, ${candy.mid}, ${candy.lo})`,
-          boxShadow: firing
-            ? `0 0 ${size * 0.55}px rgba(${glow},0.75), 0 3px 12px rgba(${glow},0.50), inset 0 1px 0 rgba(255,255,255,0.60)`
-            : frozen
-              ? "0 4px 12px rgba(59,130,246,0.35), inset 0 1px 0 rgba(255,255,255,0.55)"
-              : `0 4px 14px rgba(${glow},0.40), inset 0 1px 0 rgba(255,255,255,0.58)`,
+          width: size,
+          height: size,
+          border: "none",
+          background: "transparent",
+          padding: 0,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backdropFilter: "blur(8px)",
+          cursor: cleared ? "default" : frozen ? "not-allowed" : "pointer",
+          opacity: cleared ? 0 : 1,
+          transform: cleared ? "scale(0.1)" : firing ? "scale(1.12)" : "scale(1)",
+          transition: cleared
+            ? "transform .42s cubic-bezier(.2,.9,.2,1), opacity .35s ease"
+            : "transform .12s ease",
         }}
       >
-        <svg
-          width={size * 0.44}
-          height={size * 0.44}
-          viewBox="0 0 24 24"
+        <div
+          className={frozen && !shaking ? "frozen-cell" : undefined}
           style={{
-            transform: `rotate(${direction.rot}deg)`,
-            filter: firing ? `drop-shadow(0 0 7px ${color})` : "none",
+            width: size * 0.84,
+            height: size * 0.84,
+            borderRadius: size * 0.24,
+            border: frozen ? "3px solid #1d4ed8" : `3px solid ${candy.rim}`,
+            background: frozen
+              ? "linear-gradient(160deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.08) 40%), linear-gradient(145deg, #bfdbfe, #93c5fd, #3b82f6)"
+              : firing
+                ? `linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.0) 38%), linear-gradient(145deg, ${candy.hi}, ${candy.mid}, ${candy.lo})`
+                : `linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.0) 38%), linear-gradient(145deg, ${candy.hi}, ${candy.mid}, ${candy.lo})`,
+            // frozen boxShadow is handled by .frozen-cell CSS animation; non-frozen gets inline shadow
+            boxShadow: frozen
+              ? undefined
+              : firing
+                ? `0 0 ${size * 0.55}px rgba(${glow},0.75), 0 3px 12px rgba(${glow},0.50), inset 0 1px 0 rgba(255,255,255,0.60)`
+                : `0 4px 14px rgba(${glow},0.40), inset 0 1px 0 rgba(255,255,255,0.58)`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backdropFilter: "blur(8px)",
           }}
         >
-          <path
-            d="M12 3L12 21M12 3L5 10M12 3L19 10"
-            stroke={frozen ? "#bfdbfe" : "#ffffff"}
-            strokeWidth="2.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-          />
-        </svg>
-        {frozen && (
-          <div
+          <svg
+            width={size * 0.44}
+            height={size * 0.44}
+            viewBox="0 0 24 24"
             style={{
-              position: "absolute",
-              right: size * 0.12,
-              top: size * 0.1,
-              fontSize: size * 0.14,
-              color: "rgba(239,246,255,0.85)",
+              transform: `rotate(${direction.rot}deg)`,
+              filter: firing ? `drop-shadow(0 0 7px ${color})` : "none",
             }}
           >
-            ❄
-          </div>
-        )}
-      </div>
-    </button>
+            <path
+              d="M12 3L12 21M12 3L5 10M12 3L19 10"
+              stroke={frozen ? "#bfdbfe" : "#ffffff"}
+              strokeWidth="2.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+          </svg>
+          {frozen && (
+            <div
+              style={{
+                position: "absolute",
+                right: size * 0.12,
+                top: size * 0.1,
+                fontSize: size * 0.18,
+                color: "rgba(239,246,255,0.95)",
+                textShadow: "0 0 8px rgba(147,197,253,0.85)",
+              }}
+            >
+              ❄
+            </div>
+          )}
+        </div>
+      </button>
+    </div>
   );
 }
 
@@ -1052,6 +1135,7 @@ export default function ArrowsGame() {
   const boardRef = useRef(null);
   const particleId = useRef(0);
   const trailId = useRef(0);
+  const frozenHintShown = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -1083,6 +1167,29 @@ export default function ArrowsGame() {
     const id = window.setTimeout(() => setToast(null), toast.duration ?? 1800);
     return () => window.clearTimeout(id);
   }, [toast]);
+
+  // Background music: play during active gameplay, stop when muted or on menu/win/lose
+  useEffect(() => {
+    if (gameState === "playing" && !muted) {
+      sfx.startMusic();
+    } else {
+      sfx.stopMusic();
+    }
+    return () => sfx.stopMusic();
+  }, [gameState, muted]);
+
+  const handleFrozenTap = useCallback(() => {
+    if (!muted) sfx.prompt();
+    if (!frozenHintShown.current) {
+      frozenHintShown.current = true;
+      setToast({
+        text: "❄ Frozen! Chain reactions will thaw these cells",
+        tone: "guide",
+        duration: 2400,
+      });
+      window.setTimeout(() => { frozenHintShown.current = false; }, 6000);
+    }
+  }, [muted]);
 
   const startLevel = useCallback(
     (targetLevel, options = {}) => {
@@ -1461,6 +1568,9 @@ export default function ArrowsGame() {
         @keyframes comboRing{0%{opacity:.85;transform:translate(-50%,-50%) scale(.45)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}}
         @keyframes toastRise{0%{opacity:0;transform:translate(-50%,8px) scale(.96)}12%{opacity:1}100%{opacity:0;transform:translate(-50%,-16px) scale(1)}}
         @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        @keyframes frozenShake{0%{transform:translateX(0)}18%{transform:translateX(-7px)}36%{transform:translateX(7px)}54%{transform:translateX(-5px)}72%{transform:translateX(5px)}100%{transform:translateX(0)}}
+        @keyframes frozenPulse{0%,100%{box-shadow:0 4px 12px rgba(59,130,246,0.30),inset 0 1px 0 rgba(255,255,255,0.55)}50%{box-shadow:0 0 20px rgba(99,179,237,0.75),0 4px 12px rgba(59,130,246,0.40),inset 0 1px 0 rgba(255,255,255,0.55)}}
+        .frozen-cell{animation:frozenPulse 2.2s ease-in-out infinite}
         .pressable:active{transform:scale(.97)}
       `}</style>
 
@@ -2093,6 +2203,7 @@ export default function ArrowsGame() {
                     cell={cell}
                     size={cellSize}
                     onTap={handleTap}
+                    onFrozenTap={handleFrozenTap}
                     disabled={busy || gameState !== "playing"}
                   />
                 ))}
