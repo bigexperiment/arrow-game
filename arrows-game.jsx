@@ -958,17 +958,17 @@ function Arrow({ cell, size, onTap, disabled }) {
           width: size * 0.84,
           height: size * 0.84,
           borderRadius: size * 0.24,
-          border: `2px solid ${firing ? color : frozen ? "rgba(191,219,254,0.50)" : `rgba(${glow},0.40)`}`,
+          border: `2.5px solid ${firing ? color : frozen ? "rgba(147,197,253,0.90)" : `rgba(${glow},0.80)`}`,
           background: firing
-            ? `linear-gradient(145deg, rgba(${glow},0.55), rgba(${glow},0.25))`
+            ? `linear-gradient(145deg, rgba(${glow},0.55), rgba(${glow},0.28))`
             : frozen
-              ? "linear-gradient(145deg, rgba(191,219,254,0.28), rgba(147,197,253,0.12))"
-              : `linear-gradient(145deg, rgba(${glow},0.28), rgba(${glow},0.08))`,
+              ? "rgba(219,234,254,0.92)"
+              : "rgba(255,255,255,0.93)",
           boxShadow: firing
-            ? `0 0 ${size * 0.5}px rgba(${glow},0.50), inset 0 0 ${size * 0.2}px rgba(${glow},0.30)`
+            ? `0 0 ${size * 0.5}px rgba(${glow},0.55), inset 0 0 ${size * 0.2}px rgba(${glow},0.30)`
             : frozen
-              ? "inset 0 1px 0 rgba(255,255,255,0.2)"
-              : `0 2px 8px rgba(${glow},0.18), inset 0 1px 0 rgba(255,255,255,0.35)`,
+              ? "0 2px 8px rgba(147,197,253,0.20)"
+              : `0 3px 10px rgba(${glow},0.22), 0 1px 0 rgba(255,255,255,1) inset`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -1426,7 +1426,7 @@ export default function ArrowsGame() {
     <div
       style={{
         height: "100vh",
-        color: "#fff",
+        color: "#1e0a3c",
         fontFamily: "'Rajdhani', system-ui, sans-serif",
         background: SURFACE.page,
         overflow: "hidden",
@@ -1691,10 +1691,10 @@ export default function ArrowsGame() {
                     style={{
                       minHeight: 56,
                       borderRadius: 16,
-                      border: `2px solid ${SURFACE.cardBorder}`,
-                      background: "rgba(255,255,255,0.20)",
+                      border: "2px solid rgba(30,10,60,0.14)",
+                      background: "rgba(255,255,255,0.72)",
                       backdropFilter: "blur(12px)",
-                      color: "#fff",
+                      color: "#1e0a3c",
                       fontWeight: 700,
                       fontSize: 15,
                     }}
@@ -1711,12 +1711,12 @@ export default function ArrowsGame() {
                       minHeight: 56,
                       minWidth: 80,
                       borderRadius: 16,
-                      border: `2px solid ${SURFACE.cardBorder}`,
-                      background: "rgba(255,255,255,0.20)",
+                      border: "2px solid rgba(30,10,60,0.14)",
+                      background: "rgba(255,255,255,0.72)",
                       backdropFilter: "blur(12px)",
-                      color: "#fff",
+                      color: "#1e0a3c",
                       fontWeight: 700,
-                      fontSize: 15,
+                      fontSize: 18,
                     }}
                   >
                     {muted ? "Mute" : "Sound"}
@@ -1735,9 +1735,9 @@ export default function ArrowsGame() {
                 style={{
                   padding: 14,
                   borderRadius: 20,
-                  background: "rgba(255,255,255,0.14)",
+                  background: "rgba(255,255,255,0.80)",
                   backdropFilter: "blur(16px)",
-                  border: `2px solid ${SURFACE.cardBorder}`,
+                  border: "2px solid rgba(255,255,255,0.95)",
                 }}
               >
                 <div
@@ -1827,10 +1827,10 @@ export default function ArrowsGame() {
               style={{
                 padding: "8px",
                 borderRadius: 28,
-                background: "rgba(255,255,255,0.16)",
+                background: "rgba(255,255,255,0.78)",
                 backdropFilter: "blur(24px)",
-                border: `2px solid ${SURFACE.cardBorder}`,
-                boxShadow: "0 24px 60px rgba(0,0,0,0.20)",
+                border: "2px solid rgba(255,255,255,0.95)",
+                boxShadow: "0 24px 60px rgba(0,0,0,0.18)",
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
@@ -1854,8 +1854,8 @@ export default function ArrowsGame() {
                       gap: 8,
                       padding: "6px 10px",
                       borderRadius: 999,
-                      background: SURFACE.chip,
-                      color: "rgba(255,255,255,0.84)",
+                      background: "rgba(30,10,60,0.10)",
+                      color: "rgba(30,10,60,0.70)",
                       fontSize: 11,
                       textTransform: "uppercase",
                       letterSpacing: "0.08em",
@@ -1903,9 +1903,9 @@ export default function ArrowsGame() {
                       padding: "0 14px",
                       borderRadius: 14,
                       border: `2px solid ${SURFACE.cardBorder}`,
-                      background: "rgba(255,255,255,0.22)",
+                      background: "rgba(255,255,255,0.70)",
                       backdropFilter: "blur(12px)",
-                      color: "#fff",
+                      color: "#1e0a3c",
                       fontSize: 14,
                       fontWeight: 700,
                     }}
@@ -1920,9 +1920,9 @@ export default function ArrowsGame() {
                       padding: "0 14px",
                       borderRadius: 14,
                       border: `2px solid ${SURFACE.cardBorder}`,
-                      background: "rgba(255,255,255,0.22)",
+                      background: "rgba(255,255,255,0.70)",
                       backdropFilter: "blur(12px)",
-                      color: "#fff",
+                      color: "#1e0a3c",
                       fontSize: 14,
                       fontWeight: 700,
                     }}
@@ -1990,9 +1990,8 @@ export default function ArrowsGame() {
                     style={{
                       padding: "12px 8px",
                       borderRadius: 18,
-                      background: "rgba(255,255,255,0.20)",
-                      backdropFilter: "blur(12px)",
-                      border: `2px solid ${SURFACE.cardBorder}`,
+                      background: "rgba(255,255,255,0.85)",
+                      border: "2px solid rgba(255,255,255,0.95)",
                     }}
                   >
                     <div
@@ -2010,7 +2009,7 @@ export default function ArrowsGame() {
                       style={{
                         marginTop: 3,
                         fontSize: 10,
-                        color: "rgba(255,255,255,0.58)",
+                        color: "rgba(30,10,60,0.50)",
                         textTransform: "uppercase",
                         letterSpacing: "0.08em",
                       }}
@@ -2032,11 +2031,9 @@ export default function ArrowsGame() {
                   position: "relative",
                   borderRadius: 24,
                   overflow: "hidden",
-                  background: SURFACE.board,
-                  border: `1px solid ${SURFACE.cardBorder}`,
-                  boxShadow:
-                    "inset 0 1px 0 rgba(255,255,255,0.35), 0 12px 40px rgba(0,0,0,0.22)",
-                  backdropFilter: "blur(20px)",
+                  background: "rgba(255,255,255,0.82)",
+                  border: "2px solid rgba(255,255,255,0.95)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
                   touchAction: "manipulation",
                 }}
               >
@@ -2045,7 +2042,7 @@ export default function ArrowsGame() {
                     position: "absolute",
                     inset: 0,
                     backgroundImage:
-                      "linear-gradient(rgba(255,255,255,0.14) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.14) 1px, transparent 1px)",
+                      "linear-gradient(rgba(0,0,0,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.07) 1px, transparent 1px)",
                     backgroundSize: `${cellSize}px ${cellSize}px`,
                     opacity: 1,
                   }}
@@ -2177,9 +2174,9 @@ export default function ArrowsGame() {
                   maxWidth: 380,
                   padding: "32px 24px",
                   borderRadius: 32,
-                  background: "rgba(255,255,255,0.22)",
+                  background: "rgba(255,255,255,0.88)",
                   backdropFilter: "blur(24px)",
-                  border: `2px solid ${SURFACE.cardBorder}`,
+                  border: "2px solid rgba(255,255,255,0.95)",
                   textAlign: "center",
                   animation: "fadeUp .35s ease",
                 }}
@@ -2188,11 +2185,8 @@ export default function ArrowsGame() {
                   style={{
                     fontFamily: "'Orbitron', sans-serif",
                     fontSize: gameState === "win" ? 36 : 30,
-                    color: "#fff",
+                    color: gameState === "win" ? "#0369a1" : "#be123c",
                     letterSpacing: "-0.03em",
-                    textShadow: gameState === "win"
-                      ? "0 0 30px rgba(56,189,248,0.8)"
-                      : "0 0 30px rgba(244,63,94,0.8)",
                   }}
                 >
                   {gameState === "win"
@@ -2221,8 +2215,8 @@ export default function ArrowsGame() {
                       style={{
                         padding: "14px 8px",
                         borderRadius: 16,
-                        background: "rgba(255,255,255,0.18)",
-                        border: `2px solid ${SURFACE.cardBorder}`,
+                        background: "rgba(255,255,255,0.80)",
+                        border: "2px solid rgba(255,255,255,0.95)",
                       }}
                     >
                       <div
@@ -2303,10 +2297,10 @@ export default function ArrowsGame() {
                       style={{
                         minHeight: 52,
                         borderRadius: 16,
-                        border: `2px solid ${SURFACE.cardBorder}`,
-                        background: "rgba(255,255,255,0.20)",
+                        border: "2px solid rgba(30,10,60,0.12)",
+                        background: "rgba(255,255,255,0.75)",
                         backdropFilter: "blur(12px)",
-                        color: "#fff",
+                        color: "#1e0a3c",
                         fontWeight: 700,
                         fontSize: 15,
                       }}
