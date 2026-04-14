@@ -1,17 +1,139 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#00f5d4"/>
-      <stop offset="52%" stop-color="#ffd60a"/>
-      <stop offset="100%" stop-color="#ff006e"/>
+    <!-- Background -->
+    <radialGradient id="bg" cx="50%" cy="38%" r="62%">
+      <stop offset="0%" stop-color="#1e4a2c"/>
+      <stop offset="55%" stop-color="#0d1f14"/>
+      <stop offset="100%" stop-color="#050c07"/>
+    </radialGradient>
+
+    <!-- Main arrow face: bright lime at tip → lush green → deep forest at base -->
+    <linearGradient id="arrowFace" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#d4fce1"/>
+      <stop offset="14%"  stop-color="#4ade80"/>
+      <stop offset="58%"  stop-color="#16a34a"/>
+      <stop offset="100%" stop-color="#052e16"/>
     </linearGradient>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#ff6fb3" flood-opacity="0.35"/>
+
+    <!-- Left-bevel shadow overlay to give 3-D depth -->
+    <linearGradient id="leftBevel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#000" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Right-bevel subtle highlight -->
+    <linearGradient id="rightBevel" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0%"   stop-color="#fff" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Candy-gloss shine (white → transparent top-down) -->
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#fff" stop-opacity="0.78"/>
+      <stop offset="55%"  stop-color="#fff" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Red badge -->
+    <linearGradient id="badge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#fca5a5"/>
+      <stop offset="100%" stop-color="#991b1b"/>
+    </linearGradient>
+
+    <!-- Small yellow arrow -->
+    <linearGradient id="yellowArr" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#fef08a"/>
+      <stop offset="100%" stop-color="#a16207"/>
+    </linearGradient>
+
+    <!-- Small mint arrow -->
+    <linearGradient id="mintArr" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#d1fae5"/>
+      <stop offset="100%" stop-color="#15803d"/>
+    </linearGradient>
+
+    <!-- Clip: full arrow shape for gloss masking -->
+    <clipPath id="arrowClip">
+      <path d="M256,78 L122,266 L204,266 L204,432 L308,432 L308,266 L390,266 Z"/>
+    </clipPath>
+
+    <!-- Drop-shadow for main arrow -->
+    <filter id="arrowDrop" x="-35%" y="-20%" width="170%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="22" flood-color="#000" flood-opacity="0.82"/>
+    </filter>
+
+    <!-- Soft bloom behind arrow -->
+    <filter id="bloom" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="30"/>
     </filter>
   </defs>
-  <rect width="128" height="128" rx="32" fill="#08080e"/>
-  <g filter="url(#glow)">
-    <path d="M34 68L74 28L86 40L56 70H96V88H56L86 118L74 130L26 82V68Z" fill="url(#g)"/>
+
+  <!-- ── BACKGROUND ── -->
+  <rect width="512" height="512" rx="114" fill="url(#bg)"/>
+
+  <!-- Subtle background ring -->
+  <circle cx="256" cy="272" r="198" fill="none" stroke="#4ade80" stroke-width="1.5" opacity="0.12"/>
+
+  <!-- ── GREEN BLOOM HALO behind arrow ── -->
+  <path d="M256,78 L122,266 L204,266 L204,432 L308,432 L308,266 L390,266 Z"
+        fill="#22c55e" opacity="0.28" filter="url(#bloom)"/>
+
+  <!-- ── MAIN ARROW ── -->
+  <g filter="url(#arrowDrop)">
+    <path d="M256,78 L122,266 L204,266 L204,432 L308,432 L308,266 L390,266 Z"
+          fill="url(#arrowFace)"/>
   </g>
-  <circle cx="64" cy="64" r="34" fill="rgba(255,255,255,.06)"/>
+
+  <!-- Left-face bevel (left half of arrowhead darkened) -->
+  <path d="M256,78 L122,266 L204,266 L256,172 Z"
+        fill="url(#leftBevel)"/>
+
+  <!-- Right-face bevel (right half of arrowhead, subtle highlight) -->
+  <path d="M256,78 L390,266 L308,266 L256,172 Z"
+        fill="url(#rightBevel)"/>
+
+  <!-- ── CANDY GLOSS (clipped ellipse on upper arrow) ── -->
+  <ellipse cx="238" cy="172" rx="92" ry="68"
+           fill="url(#shine)" clip-path="url(#arrowClip)"/>
+
+  <!-- ── BRIGHT EDGE HIGHLIGHTS ── -->
+  <!-- Top-left arrowhead edge -->
+  <path d="M256,78 L122,266"
+        fill="none" stroke="rgba(255,255,255,0.52)" stroke-width="5"
+        stroke-linecap="round"/>
+  <!-- Top-right arrowhead edge (dimmer) -->
+  <path d="M256,78 L390,266"
+        fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"
+        stroke-linecap="round"/>
+  <!-- Left body edge -->
+  <line x1="204" y1="266" x2="204" y2="390"
+        stroke="rgba(255,255,255,0.20)" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- ── RED ACCENT BADGE at arrow base ── -->
+  <rect x="204" y="388" width="104" height="44" rx="12" fill="url(#badge)"/>
+  <!-- Badge shine -->
+  <rect x="216" y="393" width="80" height="14" rx="7" fill="rgba(255,255,255,0.38)"/>
+
+  <!-- ── SMALL FLANKING ARROWS (hint at chain mechanic) ── -->
+  <!-- Yellow arrow · lower-right -->
+  <g transform="translate(390,310) rotate(35) scale(0.19)">
+    <path d="M256,78 L122,266 L204,266 L204,432 L308,432 L308,266 L390,266 Z"
+          fill="url(#yellowArr)"/>
+  </g>
+  <!-- Mint arrow · lower-left -->
+  <g transform="translate(122,310) rotate(-35) scale(0.19)">
+    <path d="M256,78 L122,266 L204,266 L204,432 L308,432 L308,266 L390,266 Z"
+          fill="url(#mintArr)"/>
+  </g>
+
+  <!-- ── BORDER ── -->
+  <!-- Outer green glow border -->
+  <rect x="5" y="5" width="502" height="502" rx="111"
+        fill="none" stroke="rgba(74,222,128,0.38)" stroke-width="4.5"/>
+  <!-- Inner subtle white line -->
+  <rect x="11" y="11" width="490" height="490" rx="106"
+        fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="2"/>
+
+  <!-- ── TOP OVERALL CANDY GLOSS ── -->
+  <ellipse cx="256" cy="38" rx="188" ry="52" fill="white" opacity="0.05"/>
 </svg>
