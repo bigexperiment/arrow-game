@@ -187,32 +187,32 @@ const DIRS = {
 const DIRECTION_KEYS = Object.keys(DIRS);
 
 const COLORS = {
-  up: "#5eead4",
+  up: "#4ade80",
   right: "#facc15",
-  down: "#fb7185",
-  left: "#93c5fd",
+  down: "#f87171",
+  left: "#86efac",
 };
 
 const GLOWS = {
-  up: "94,234,212",
+  up: "74,222,128",
   right: "250,204,21",
-  down: "251,113,133",
-  left: "147,197,253",
+  down: "248,113,113",
+  left: "134,239,172",
 };
 
 const SURFACE = {
-  page: "radial-gradient(circle at 12% 10%, rgba(251,113,133,0.16), transparent 24%), radial-gradient(circle at 85% 12%, rgba(56,189,248,0.18), transparent 26%), radial-gradient(circle at 50% 100%, rgba(250,204,21,0.1), transparent 28%), linear-gradient(180deg, #09111d 0%, #0e1728 48%, #111827 100%)",
-  panel: "linear-gradient(180deg, rgba(17,24,39,0.92), rgba(15,23,42,0.78))",
+  page: "radial-gradient(circle at 12% 10%, rgba(248,113,113,0.18), transparent 26%), radial-gradient(circle at 85% 12%, rgba(74,222,128,0.18), transparent 26%), radial-gradient(circle at 50% 100%, rgba(250,204,21,0.1), transparent 28%), linear-gradient(180deg, #080e0b 0%, #0c1610 48%, #0f1a12 100%)",
+  panel: "linear-gradient(180deg, rgba(10,22,14,0.94), rgba(8,18,12,0.82))",
   panelSoft:
-    "linear-gradient(180deg, rgba(30,41,59,0.62), rgba(15,23,42,0.58))",
-  chip: "rgba(255,255,255,0.07)",
-  cardBorder: "rgba(255,255,255,0.1)",
+    "linear-gradient(180deg, rgba(20,38,24,0.65), rgba(10,22,14,0.60))",
+  chip: "rgba(74,222,128,0.08)",
+  cardBorder: "rgba(74,222,128,0.14)",
   board:
-    "radial-gradient(circle at top, rgba(56,189,248,0.14), transparent 34%), radial-gradient(circle at 80% 20%, rgba(251,113,133,0.12), transparent 30%), linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.025))",
-  primaryButton: "linear-gradient(135deg, #5eead4, #38bdf8 58%, #818cf8)",
-  accentButton: "linear-gradient(135deg, #fb7185, #f59e0b)",
+    "radial-gradient(circle at top left, rgba(74,222,128,0.18), transparent 36%), radial-gradient(circle at bottom right, rgba(248,113,113,0.16), transparent 32%), linear-gradient(145deg, rgba(20,40,25,0.95), rgba(12,24,16,0.98))",
+  primaryButton: "linear-gradient(135deg, #4ade80, #22c55e 55%, #86efac)",
+  accentButton: "linear-gradient(135deg, #f87171, #f59e0b)",
   progress:
-    "linear-gradient(90deg, #5eead4, #38bdf8 45%, #facc15 82%, #fb7185)",
+    "linear-gradient(90deg, #4ade80, #22c55e 45%, #facc15 82%, #f87171)",
 };
 
 const LEVEL_NAMES = [
@@ -1401,7 +1401,7 @@ export default function ArrowsGame() {
   }, [autoDebugEnabled, board, debugDifficultyScore, levelConfig, taps]);
   const cellSize = useMemo(() => {
     if (gameState === "menu") return 48;
-    const widthBudget = Math.min(viewport.width - 18, 640);
+    const widthBudget = Math.min(viewport.width - 40, 640);
     const heightBudget = Math.min(viewport.height * 0.72, 720);
     return Math.max(
       34,
@@ -1430,7 +1430,7 @@ export default function ArrowsGame() {
       style={{
         height: "100vh",
         color: "#f8fafc",
-        fontFamily: "'Space Grotesk', system-ui, sans-serif",
+        fontFamily: "'Rajdhani', system-ui, sans-serif",
         background: SURFACE.page,
         overflow: "hidden",
         userSelect: "none",
@@ -1438,13 +1438,13 @@ export default function ArrowsGame() {
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Sora:wght@600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
         *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
         html,body,#root{margin:0;height:100%;overflow:hidden}
-        body{background:#09111d}
+        body{background:#080e0b}
         button{font:inherit}
         @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes pulseGlow{0%,100%{box-shadow:0 0 0 rgba(94,234,212,0)}50%{box-shadow:0 0 28px rgba(129,140,248,0.24)}}
+        @keyframes pulseGlow{0%,100%{box-shadow:0 0 0 rgba(74,222,128,0)}50%{box-shadow:0 0 32px rgba(74,222,128,0.32)}}
         @keyframes burstParticle{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0.2)}}
         @keyframes trailFlash{0%{opacity:0}20%{opacity:.68}100%{opacity:0}}
         @keyframes comboPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.8)}25%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.8)}}
@@ -1461,7 +1461,7 @@ export default function ArrowsGame() {
           pointerEvents: "none",
           opacity: 0.32,
           backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
+            "linear-gradient(rgba(74,222,128,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(248,113,113,0.06) 1px, transparent 1px)",
           backgroundSize: "36px 36px",
           maskImage: "linear-gradient(180deg, rgba(0,0,0,.8), rgba(0,0,0,.2))",
         }}
@@ -1575,7 +1575,7 @@ export default function ArrowsGame() {
               <div
                 style={{
                   marginTop: 18,
-                  fontFamily: "'Sora', sans-serif",
+                  fontFamily: "'Orbitron', sans-serif",
                   fontSize: viewport.width < 420 ? 38 : 46,
                   lineHeight: 0.95,
                   letterSpacing: "-0.06em",
@@ -1585,10 +1585,10 @@ export default function ArrowsGame() {
                 <span
                   style={{
                     background:
-                      "linear-gradient(135deg, #5eead4, #38bdf8 55%, #facc15)",
+                      "linear-gradient(135deg, #4ade80, #22c55e 55%, #f87171)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
-                    textShadow: "0 0 28px rgba(56,189,248,0.14)",
+                    textShadow: "0 0 28px rgba(74,222,128,0.2)",
                   }}
                 >
                   X
@@ -1627,7 +1627,7 @@ export default function ArrowsGame() {
                 >
                   <div
                     style={{
-                      fontFamily: "'Sora', sans-serif",
+                      fontFamily: "'Orbitron', sans-serif",
                       fontSize: 22,
                       color: "#f8fafc",
                     }}
@@ -1780,7 +1780,7 @@ export default function ArrowsGame() {
                   </div>
                   <div>
                     <div
-                      style={{ fontFamily: "'Sora', sans-serif", fontSize: 22 }}
+                      style={{ fontFamily: "'Orbitron', sans-serif", fontSize: 22 }}
                     >
                       Level {nextLevelPreview.levelNumber}: {nextLevelPreview.title}
                     </div>
@@ -1839,7 +1839,7 @@ export default function ArrowsGame() {
                 borderRadius: 22,
                 background: SURFACE.panel,
                 border: `1px solid ${SURFACE.cardBorder}`,
-                boxShadow: "0 28px 70px rgba(0,0,0,0.3)",
+                boxShadow: "0 28px 70px rgba(0,0,0,0.45), 0 0 0 1px rgba(74,222,128,0.1)",
                 backdropFilter: "blur(16px)",
                 height: "100%",
                 display: "flex",
@@ -1876,7 +1876,7 @@ export default function ArrowsGame() {
                   <div
                     style={{
                       marginTop: 4,
-                      fontFamily: "'Sora', sans-serif",
+                      fontFamily: "'Orbitron', sans-serif",
                       fontSize: viewport.width < 420 ? 20 : 26,
                       letterSpacing: "-0.05em",
                       lineHeight: 1,
@@ -1886,7 +1886,7 @@ export default function ArrowsGame() {
                     <span
                       style={{
                         marginLeft: 8,
-                        fontFamily: "'Space Grotesk', system-ui, sans-serif",
+                        fontFamily: "'Rajdhani', system-ui, sans-serif",
                         fontSize: viewport.width < 420 ? 11 : 12,
                         color: "rgba(255,255,255,0.46)",
                         letterSpacing: "0.03em",
@@ -1902,7 +1902,7 @@ export default function ArrowsGame() {
                       <span
                         style={{
                           marginLeft: 8,
-                          fontFamily: "'Space Grotesk', system-ui, sans-serif",
+                          fontFamily: "'Rajdhani', system-ui, sans-serif",
                           fontSize: viewport.width < 420 ? 11 : 12,
                           color: "rgba(94,234,212,0.72)",
                           letterSpacing: "0.03em",
@@ -1997,11 +1997,11 @@ export default function ArrowsGame() {
                 }}
               >
                 {[
-                  { label: "Level", value: level, color: "#93c5fd" },
+                  { label: "Level", value: level, color: "#86efac" },
                   {
                     label: "Taps",
                     value: taps,
-                    color: taps <= 2 ? "#fb7185" : "#5eead4",
+                    color: taps <= 2 ? "#f87171" : "#4ade80",
                   },
                   { label: "Left", value: remaining, color: "#facc15" },
                 ].map((item) => (
@@ -2017,7 +2017,7 @@ export default function ArrowsGame() {
                   >
                     <div
                       style={{
-                        fontFamily: "'Sora', sans-serif",
+                        fontFamily: "'Orbitron', sans-serif",
                         fontSize: viewport.width < 420 ? 20 : 24,
                         color: item.color,
                         lineHeight: 1,
@@ -2054,7 +2054,7 @@ export default function ArrowsGame() {
                   background: SURFACE.board,
                   border: `1px solid ${SURFACE.cardBorder}`,
                   boxShadow:
-                    "inset 0 1px 0 rgba(255,255,255,0.09), 0 18px 40px rgba(0,0,0,0.18)",
+                    "inset 0 1px 0 rgba(74,222,128,0.12), 0 18px 48px rgba(0,0,0,0.36), 0 0 0 1px rgba(74,222,128,0.08)",
                   touchAction: "manipulation",
                 }}
               >
@@ -2063,9 +2063,9 @@ export default function ArrowsGame() {
                     position: "absolute",
                     inset: 0,
                     backgroundImage:
-                      "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
+                      "linear-gradient(rgba(74,222,128,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(248,113,113,0.10) 1px, transparent 1px)",
                     backgroundSize: `${cellSize}px ${cellSize}px`,
-                    opacity: 0.6,
+                    opacity: 0.75,
                   }}
                 />
 
@@ -2120,7 +2120,7 @@ export default function ArrowsGame() {
                       top: "50%",
                       left: "50%",
                       transform: "translate(-50%, -50%)",
-                      fontFamily: "'Sora', sans-serif",
+                      fontFamily: "'Orbitron', sans-serif",
                       fontSize: viewport.width < 420 ? 38 : 48,
                       color: "#fde047",
                       textShadow: "0 0 28px rgba(251,191,36,0.4)",
@@ -2215,9 +2215,9 @@ export default function ArrowsGame() {
               >
                 <div
                   style={{
-                    fontFamily: "'Sora', sans-serif",
+                    fontFamily: "'Orbitron', sans-serif",
                     fontSize: gameState === "win" ? 32 : 28,
-                    color: gameState === "win" ? "#5eead4" : "#fb7185",
+                    color: gameState === "win" ? "#4ade80" : "#f87171",
                     letterSpacing: "-0.05em",
                   }}
                 >
@@ -2265,7 +2265,7 @@ export default function ArrowsGame() {
                     >
                       <div
                         style={{
-                          fontFamily: "'Sora', sans-serif",
+                          fontFamily: "'Orbitron', sans-serif",
                           fontSize: 20,
                         }}
                       >
