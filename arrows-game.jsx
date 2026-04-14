@@ -200,6 +200,14 @@ const GLOWS = {
   left: "192,132,252",
 };
 
+// Candy-style 3-stop gradients for each direction
+const CANDY = {
+  up:    { hi: "#bae6fd", mid: "#38bdf8", lo: "#0284c7", rim: "#075985" },
+  right: { hi: "#fed7aa", mid: "#fb923c", lo: "#ea580c", rim: "#9a3412" },
+  down:  { hi: "#fecdd3", mid: "#f43f5e", lo: "#be123c", rim: "#881337" },
+  left:  { hi: "#ede9fe", mid: "#c084fc", lo: "#9333ea", rim: "#5b21b6" },
+};
+
 const SURFACE = {
   page: "linear-gradient(150deg, #f97316 0%, #ec4899 38%, #8b5cf6 68%, #2563eb 100%)",
   panel: "rgba(255,255,255,0.18)",
@@ -924,6 +932,7 @@ function Arrow({ cell, size, onTap, disabled }) {
   const direction = DIRS[cell.dir];
   const color = COLORS[cell.dir];
   const glow = GLOWS[cell.dir];
+  const candy = CANDY[cell.dir];
   const cleared = cell.state === "cleared";
   const firing = cell.state === "firing";
   const frozen = Boolean(cell.frozen);
@@ -958,17 +967,21 @@ function Arrow({ cell, size, onTap, disabled }) {
           width: size * 0.84,
           height: size * 0.84,
           borderRadius: size * 0.24,
-          border: `2.5px solid ${firing ? color : frozen ? "rgba(147,197,253,0.90)" : `rgba(${glow},0.80)`}`,
+          border: firing
+            ? `3px solid ${candy.rim}`
+            : frozen
+              ? "3px solid #1d4ed8"
+              : `3px solid ${candy.rim}`,
           background: firing
-            ? `linear-gradient(145deg, rgba(${glow},0.55), rgba(${glow},0.28))`
+            ? `linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.0) 38%), linear-gradient(145deg, ${candy.hi}, ${candy.mid}, ${candy.lo})`
             : frozen
-              ? "rgba(219,234,254,0.92)"
-              : "rgba(255,255,255,0.93)",
+              ? "linear-gradient(160deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.08) 40%), linear-gradient(145deg, #bfdbfe, #93c5fd, #3b82f6)"
+              : `linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.0) 38%), linear-gradient(145deg, ${candy.hi}, ${candy.mid}, ${candy.lo})`,
           boxShadow: firing
-            ? `0 0 ${size * 0.5}px rgba(${glow},0.55), inset 0 0 ${size * 0.2}px rgba(${glow},0.30)`
+            ? `0 0 ${size * 0.55}px rgba(${glow},0.75), 0 3px 12px rgba(${glow},0.50), inset 0 1px 0 rgba(255,255,255,0.60)`
             : frozen
-              ? "0 2px 8px rgba(147,197,253,0.20)"
-              : `0 3px 10px rgba(${glow},0.22), 0 1px 0 rgba(255,255,255,1) inset`,
+              ? "0 4px 12px rgba(59,130,246,0.35), inset 0 1px 0 rgba(255,255,255,0.55)"
+              : `0 4px 14px rgba(${glow},0.40), inset 0 1px 0 rgba(255,255,255,0.58)`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -986,7 +999,7 @@ function Arrow({ cell, size, onTap, disabled }) {
         >
           <path
             d="M12 3L12 21M12 3L5 10M12 3L19 10"
-            stroke={firing ? "#ffffff" : frozen ? "rgba(191,219,254,0.85)" : color}
+            stroke={frozen ? "#bfdbfe" : "#ffffff"}
             strokeWidth="2.6"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -1458,7 +1471,7 @@ export default function ArrowsGame() {
           pointerEvents: "none",
           opacity: 0.32,
           backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)",
+            "linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px)",
           backgroundSize: "36px 36px",
           maskImage: "linear-gradient(180deg, rgba(0,0,0,.8), rgba(0,0,0,.2))",
         }}
@@ -1827,10 +1840,10 @@ export default function ArrowsGame() {
               style={{
                 padding: "8px",
                 borderRadius: 28,
-                background: "rgba(255,255,255,0.78)",
+                background: "linear-gradient(145deg, rgba(255,236,246,0.90) 0%, rgba(245,240,255,0.90) 50%, rgba(234,247,255,0.90) 100%)",
                 backdropFilter: "blur(24px)",
-                border: "2px solid rgba(255,255,255,0.95)",
-                boxShadow: "0 24px 60px rgba(0,0,0,0.18)",
+                border: "3px solid rgba(255,255,255,0.92)",
+                boxShadow: "0 16px 48px rgba(139,92,246,0.20)",
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
@@ -1977,21 +1990,18 @@ export default function ArrowsGame() {
                 }}
               >
                 {[
-                  { label: "LVL", value: level, color: "#38bdf8" },
-                  {
-                    label: "TAPS",
-                    value: taps,
-                    color: taps <= 2 ? "#f43f5e" : "#fb923c",
-                  },
-                  { label: "LEFT", value: remaining, color: "#c084fc" },
+                  { label: "LVL",  value: level,     color: "#0284c7", bg: "linear-gradient(145deg, #f0f9ff, #bae6fd)" },
+                  { label: "TAPS", value: taps,      color: taps <= 2 ? "#be123c" : "#ea580c", bg: taps <= 2 ? "linear-gradient(145deg, #fff1f2, #fecdd3)" : "linear-gradient(145deg, #fff7ed, #fed7aa)" },
+                  { label: "LEFT", value: remaining, color: "#7c3aed", bg: "linear-gradient(145deg, #faf5ff, #ede9fe)" },
                 ].map((item) => (
                   <div
                     key={item.label}
                     style={{
                       padding: "12px 8px",
                       borderRadius: 18,
-                      background: "rgba(255,255,255,0.85)",
-                      border: "2px solid rgba(255,255,255,0.95)",
+                      background: item.bg,
+                      border: "3px solid rgba(255,255,255,0.90)",
+                      boxShadow: `0 3px 12px rgba(0,0,0,0.08)`,
                     }}
                   >
                     <div
@@ -2031,9 +2041,9 @@ export default function ArrowsGame() {
                   position: "relative",
                   borderRadius: 24,
                   overflow: "hidden",
-                  background: "rgba(255,255,255,0.82)",
-                  border: "2px solid rgba(255,255,255,0.95)",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+                  background: "linear-gradient(145deg, #fdf2f8 0%, #f5f3ff 50%, #eff6ff 100%)",
+                  border: "3px solid rgba(255,255,255,0.95)",
+                  boxShadow: "0 8px 32px rgba(139,92,246,0.22), inset 0 1px 0 rgba(255,255,255,0.9)",
                   touchAction: "manipulation",
                 }}
               >
@@ -2042,7 +2052,7 @@ export default function ArrowsGame() {
                     position: "absolute",
                     inset: 0,
                     backgroundImage:
-                      "linear-gradient(rgba(0,0,0,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.07) 1px, transparent 1px)",
+                      "linear-gradient(rgba(139,92,246,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(236,72,153,0.14) 1px, transparent 1px)",
                     backgroundSize: `${cellSize}px ${cellSize}px`,
                     opacity: 1,
                   }}
