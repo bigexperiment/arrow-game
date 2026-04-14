@@ -187,32 +187,29 @@ const DIRS = {
 const DIRECTION_KEYS = Object.keys(DIRS);
 
 const COLORS = {
-  up: "#4ade80",
-  right: "#facc15",
-  down: "#f87171",
-  left: "#86efac",
+  up: "#38bdf8",
+  right: "#fb923c",
+  down: "#f43f5e",
+  left: "#c084fc",
 };
 
 const GLOWS = {
-  up: "74,222,128",
-  right: "250,204,21",
-  down: "248,113,113",
-  left: "134,239,172",
+  up: "56,189,248",
+  right: "251,146,60",
+  down: "244,63,94",
+  left: "192,132,252",
 };
 
 const SURFACE = {
-  page: "radial-gradient(circle at 12% 10%, rgba(248,113,113,0.18), transparent 26%), radial-gradient(circle at 85% 12%, rgba(74,222,128,0.18), transparent 26%), radial-gradient(circle at 50% 100%, rgba(250,204,21,0.1), transparent 28%), linear-gradient(180deg, #080e0b 0%, #0c1610 48%, #0f1a12 100%)",
-  panel: "linear-gradient(180deg, rgba(10,22,14,0.94), rgba(8,18,12,0.82))",
-  panelSoft:
-    "linear-gradient(180deg, rgba(20,38,24,0.65), rgba(10,22,14,0.60))",
-  chip: "rgba(74,222,128,0.08)",
-  cardBorder: "rgba(74,222,128,0.14)",
-  board:
-    "radial-gradient(circle at top left, rgba(74,222,128,0.18), transparent 36%), radial-gradient(circle at bottom right, rgba(248,113,113,0.16), transparent 32%), linear-gradient(145deg, rgba(20,40,25,0.95), rgba(12,24,16,0.98))",
-  primaryButton: "linear-gradient(135deg, #4ade80, #22c55e 55%, #86efac)",
-  accentButton: "linear-gradient(135deg, #f87171, #f59e0b)",
-  progress:
-    "linear-gradient(90deg, #4ade80, #22c55e 45%, #facc15 82%, #f87171)",
+  page: "linear-gradient(150deg, #f97316 0%, #ec4899 38%, #8b5cf6 68%, #2563eb 100%)",
+  panel: "rgba(255,255,255,0.18)",
+  panelSoft: "rgba(255,255,255,0.13)",
+  chip: "rgba(255,255,255,0.28)",
+  cardBorder: "rgba(255,255,255,0.38)",
+  board: "rgba(255,255,255,0.20)",
+  primaryButton: "linear-gradient(135deg, #f97316, #ec4899)",
+  accentButton: "linear-gradient(135deg, #8b5cf6, #2563eb)",
+  progress: "linear-gradient(90deg, #38bdf8, #c084fc 40%, #ec4899 72%, #fb923c)",
 };
 
 const LEVEL_NAMES = [
@@ -961,17 +958,17 @@ function Arrow({ cell, size, onTap, disabled }) {
           width: size * 0.84,
           height: size * 0.84,
           borderRadius: size * 0.24,
-          border: `1.5px solid ${firing ? color : frozen ? "rgba(191,219,254,0.28)" : "rgba(255,255,255,0.08)"}`,
+          border: `2px solid ${firing ? color : frozen ? "rgba(191,219,254,0.50)" : `rgba(${glow},0.40)`}`,
           background: firing
-            ? `linear-gradient(180deg, rgba(${glow},0.28), rgba(255,255,255,0.07))`
+            ? `linear-gradient(145deg, rgba(${glow},0.55), rgba(${glow},0.25))`
             : frozen
-              ? "linear-gradient(180deg, rgba(191,219,254,0.11), rgba(147,197,253,0.035))"
-              : "linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03))",
+              ? "linear-gradient(145deg, rgba(191,219,254,0.28), rgba(147,197,253,0.12))"
+              : `linear-gradient(145deg, rgba(${glow},0.28), rgba(${glow},0.08))`,
           boxShadow: firing
-            ? `0 0 ${size * 0.5}px rgba(${glow},0.36), inset 0 0 ${size * 0.2}px rgba(${glow},0.22)`
+            ? `0 0 ${size * 0.5}px rgba(${glow},0.50), inset 0 0 ${size * 0.2}px rgba(${glow},0.30)`
             : frozen
-              ? "inset 0 1px 0 rgba(255,255,255,0.1)"
-              : "inset 0 1px 0 rgba(255,255,255,0.08)",
+              ? "inset 0 1px 0 rgba(255,255,255,0.2)"
+              : `0 2px 8px rgba(${glow},0.18), inset 0 1px 0 rgba(255,255,255,0.35)`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -989,7 +986,7 @@ function Arrow({ cell, size, onTap, disabled }) {
         >
           <path
             d="M12 3L12 21M12 3L5 10M12 3L19 10"
-            stroke={firing ? "#ffffff" : color}
+            stroke={firing ? "#ffffff" : frozen ? "rgba(191,219,254,0.85)" : color}
             strokeWidth="2.6"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -1429,7 +1426,7 @@ export default function ArrowsGame() {
     <div
       style={{
         height: "100vh",
-        color: "#f8fafc",
+        color: "#fff",
         fontFamily: "'Rajdhani', system-ui, sans-serif",
         background: SURFACE.page,
         overflow: "hidden",
@@ -1441,10 +1438,10 @@ export default function ArrowsGame() {
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
         *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
         html,body,#root{margin:0;height:100%;overflow:hidden}
-        body{background:#080e0b}
+        body{background:linear-gradient(150deg,#f97316 0%,#ec4899 38%,#8b5cf6 68%,#2563eb 100%)}
         button{font:inherit}
         @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes pulseGlow{0%,100%{box-shadow:0 0 0 rgba(74,222,128,0)}50%{box-shadow:0 0 32px rgba(74,222,128,0.32)}}
+        @keyframes pulseGlow{0%,100%{box-shadow:0 0 0 rgba(251,146,60,0)}50%{box-shadow:0 0 40px rgba(236,72,153,0.55)}}
         @keyframes burstParticle{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0.2)}}
         @keyframes trailFlash{0%{opacity:0}20%{opacity:.68}100%{opacity:0}}
         @keyframes comboPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.8)}25%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.8)}}
@@ -1461,7 +1458,7 @@ export default function ArrowsGame() {
           pointerEvents: "none",
           opacity: 0.32,
           backgroundImage:
-            "linear-gradient(rgba(74,222,128,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(248,113,113,0.06) 1px, transparent 1px)",
+            "linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)",
           backgroundSize: "36px 36px",
           maskImage: "linear-gradient(180deg, rgba(0,0,0,.8), rgba(0,0,0,.2))",
         }}
@@ -1524,10 +1521,11 @@ export default function ArrowsGame() {
             <div
               style={{
                 padding: "22px 18px 18px",
-                borderRadius: 24,
-                background: SURFACE.panel,
-                border: `1px solid ${SURFACE.cardBorder}`,
-                boxShadow: "0 24px 60px rgba(0,0,0,0.32)",
+                borderRadius: 28,
+                background: "rgba(255,255,255,0.20)",
+                backdropFilter: "blur(24px)",
+                border: `2px solid ${SURFACE.cardBorder}`,
+                boxShadow: "0 24px 60px rgba(0,0,0,0.18)",
                 overflow: "hidden",
                 position: "relative",
               }}
@@ -1541,7 +1539,7 @@ export default function ArrowsGame() {
                   height: 124,
                   borderRadius: 999,
                   background:
-                    "radial-gradient(circle, rgba(94,234,212,0.3), transparent 62%)",
+                    "radial-gradient(circle, rgba(56,189,248,0.45), transparent 62%)",
                 }}
               />
               <div
@@ -1553,7 +1551,7 @@ export default function ArrowsGame() {
                   height: 150,
                   borderRadius: 999,
                   background:
-                    "radial-gradient(circle, rgba(251,113,133,0.22), transparent 66%)",
+                    "radial-gradient(circle, rgba(251,146,60,0.40), transparent 66%)",
                 }}
               />
               <div
@@ -1595,17 +1593,6 @@ export default function ArrowsGame() {
                 </span>
               </div>
 
-              <p
-                style={{
-                  marginTop: 14,
-                  maxWidth: 320,
-                  color: "rgba(255,255,255,0.72)",
-                  lineHeight: 1.45,
-                  fontSize: 14,
-                }}
-              >
-                Start simple, learn by playing, and keep climbing forever.
-              </p>
 
               <div
                 style={{
@@ -1671,14 +1658,15 @@ export default function ArrowsGame() {
                     startLevel(progress.currentLevel);
                   }}
                   style={{
-                    minHeight: 56,
-                    borderRadius: 16,
+                    minHeight: 68,
+                    borderRadius: 20,
                     border: "none",
                     background: SURFACE.primaryButton,
-                    color: "#062235",
+                    color: "#fff",
                     fontWeight: 800,
-                    fontSize: 17,
-                    boxShadow: "0 16px 32px rgba(99,102,241,0.22)",
+                    fontSize: 20,
+                    letterSpacing: "0.02em",
+                    boxShadow: "0 8px 32px rgba(249,115,22,0.45), 0 2px 0 rgba(255,255,255,0.25) inset",
                     animation: "pulseGlow 2.6s ease-in-out infinite",
                   }}
                 >
@@ -1701,13 +1689,14 @@ export default function ArrowsGame() {
                       startLevel(1);
                     }}
                     style={{
-                      minHeight: 48,
-                      borderRadius: 14,
-                      border: `1px solid ${SURFACE.cardBorder}`,
-                      background:
-                        "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
-                      color: "#f8fafc",
-                      fontWeight: 600,
+                      minHeight: 56,
+                      borderRadius: 16,
+                      border: `2px solid ${SURFACE.cardBorder}`,
+                      background: "rgba(255,255,255,0.20)",
+                      backdropFilter: "blur(12px)",
+                      color: "#fff",
+                      fontWeight: 700,
+                      fontSize: 15,
                     }}
                   >
                     Fresh run
@@ -1719,14 +1708,15 @@ export default function ArrowsGame() {
                       setMuted((value) => !value);
                     }}
                     style={{
-                      minHeight: 48,
-                      minWidth: 70,
-                      borderRadius: 14,
-                      border: `1px solid ${SURFACE.cardBorder}`,
-                      background:
-                        "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
-                      color: "rgba(255,255,255,0.9)",
+                      minHeight: 56,
+                      minWidth: 80,
+                      borderRadius: 16,
+                      border: `2px solid ${SURFACE.cardBorder}`,
+                      background: "rgba(255,255,255,0.20)",
+                      backdropFilter: "blur(12px)",
+                      color: "#fff",
                       fontWeight: 700,
+                      fontSize: 15,
                     }}
                   >
                     {muted ? "Mute" : "Sound"}
@@ -1745,9 +1735,9 @@ export default function ArrowsGame() {
                 style={{
                   padding: 14,
                   borderRadius: 20,
-                  background: SURFACE.panelSoft,
-                  border: `1px solid ${SURFACE.cardBorder}`,
-                  backdropFilter: "blur(12px)",
+                  background: "rgba(255,255,255,0.14)",
+                  backdropFilter: "blur(16px)",
+                  border: `2px solid ${SURFACE.cardBorder}`,
                 }}
               >
                 <div
@@ -1836,11 +1826,11 @@ export default function ArrowsGame() {
             <div
               style={{
                 padding: "8px",
-                borderRadius: 22,
-                background: SURFACE.panel,
-                border: `1px solid ${SURFACE.cardBorder}`,
-                boxShadow: "0 28px 70px rgba(0,0,0,0.45), 0 0 0 1px rgba(74,222,128,0.1)",
-                backdropFilter: "blur(16px)",
+                borderRadius: 28,
+                background: "rgba(255,255,255,0.16)",
+                backdropFilter: "blur(24px)",
+                border: `2px solid ${SURFACE.cardBorder}`,
+                boxShadow: "0 24px 60px rgba(0,0,0,0.20)",
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
@@ -1883,18 +1873,6 @@ export default function ArrowsGame() {
                     }}
                   >
                     {`Level ${level}: ${levelConfig.title}`}
-                    <span
-                      style={{
-                        marginLeft: 8,
-                        fontFamily: "'Rajdhani', system-ui, sans-serif",
-                        fontSize: viewport.width < 420 ? 11 : 12,
-                        color: "rgba(255,255,255,0.46)",
-                        letterSpacing: "0.03em",
-                        fontWeight: 500,
-                      }}
-                    >
-                      optimal {levelConfig.optimalTaps} taps
-                    </span>
                     {/*
                     Debug-only score display. Keeping this commented so it is easy
                     to restore later while hidden from normal gameplay.
@@ -1916,19 +1894,20 @@ export default function ArrowsGame() {
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 6 }}>
+                <div style={{ display: "flex", gap: 8 }}>
                   <button
                     className="pressable"
                     onClick={() => setGameState("menu")}
                     style={{
-                      minHeight: 36,
-                      padding: "0 10px",
-                      borderRadius: 12,
-                      border: `1px solid ${SURFACE.cardBorder}`,
-                      background:
-                        "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
-                      color: "#f8fafc",
-                      fontSize: 13,
+                      minHeight: 42,
+                      padding: "0 14px",
+                      borderRadius: 14,
+                      border: `2px solid ${SURFACE.cardBorder}`,
+                      background: "rgba(255,255,255,0.22)",
+                      backdropFilter: "blur(12px)",
+                      color: "#fff",
+                      fontSize: 14,
+                      fontWeight: 700,
                     }}
                   >
                     Menu
@@ -1937,17 +1916,18 @@ export default function ArrowsGame() {
                     className="pressable"
                     onClick={() => startLevel(level)}
                     style={{
-                      minHeight: 36,
-                      padding: "0 10px",
-                      borderRadius: 12,
-                      border: `1px solid ${SURFACE.cardBorder}`,
-                      background:
-                        "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
-                      color: "#f8fafc",
-                      fontSize: 13,
+                      minHeight: 42,
+                      padding: "0 14px",
+                      borderRadius: 14,
+                      border: `2px solid ${SURFACE.cardBorder}`,
+                      background: "rgba(255,255,255,0.22)",
+                      backdropFilter: "blur(12px)",
+                      color: "#fff",
+                      fontSize: 14,
+                      fontWeight: 700,
                     }}
                   >
-                    Restart
+                    ↺
                   </button>
                   {/*
                   Debug-only autoplay control. Commented out for now so normal
@@ -1973,17 +1953,17 @@ export default function ArrowsGame() {
                     className="pressable"
                     onClick={() => setMuted((value) => !value)}
                     style={{
-                      minHeight: 36,
-                      padding: "0 10px",
-                      borderRadius: 12,
-                      border: `1px solid ${SURFACE.cardBorder}`,
-                      background:
-                        "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
-                      color: "#f8fafc",
-                      fontSize: 13,
+                      minHeight: 42,
+                      padding: "0 14px",
+                      borderRadius: 14,
+                      border: `2px solid ${SURFACE.cardBorder}`,
+                      background: "rgba(255,255,255,0.22)",
+                      backdropFilter: "blur(12px)",
+                      color: "#fff",
+                      fontSize: 18,
                     }}
                   >
-                    {muted ? "Muted" : "Sound"}
+                    {muted ? "🔇" : "🔊"}
                   </button>
                 </div>
               </div>
@@ -1997,30 +1977,31 @@ export default function ArrowsGame() {
                 }}
               >
                 {[
-                  { label: "Level", value: level, color: "#86efac" },
+                  { label: "LVL", value: level, color: "#38bdf8" },
                   {
-                    label: "Taps",
+                    label: "TAPS",
                     value: taps,
-                    color: taps <= 2 ? "#f87171" : "#4ade80",
+                    color: taps <= 2 ? "#f43f5e" : "#fb923c",
                   },
-                  { label: "Left", value: remaining, color: "#facc15" },
+                  { label: "LEFT", value: remaining, color: "#c084fc" },
                 ].map((item) => (
                   <div
                     key={item.label}
                     style={{
-                      padding: "8px 8px",
-                      borderRadius: 14,
-                      background:
-                        "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035))",
-                      border: `1px solid ${SURFACE.cardBorder}`,
+                      padding: "12px 8px",
+                      borderRadius: 18,
+                      background: "rgba(255,255,255,0.20)",
+                      backdropFilter: "blur(12px)",
+                      border: `2px solid ${SURFACE.cardBorder}`,
                     }}
                   >
                     <div
                       style={{
                         fontFamily: "'Orbitron', sans-serif",
-                        fontSize: viewport.width < 420 ? 20 : 24,
+                        fontSize: viewport.width < 420 ? 26 : 30,
                         color: item.color,
                         lineHeight: 1,
+                        textShadow: `0 0 20px ${item.color}`,
                       }}
                     >
                       {item.value}
@@ -2054,7 +2035,8 @@ export default function ArrowsGame() {
                   background: SURFACE.board,
                   border: `1px solid ${SURFACE.cardBorder}`,
                   boxShadow:
-                    "inset 0 1px 0 rgba(74,222,128,0.12), 0 18px 48px rgba(0,0,0,0.36), 0 0 0 1px rgba(74,222,128,0.08)",
+                    "inset 0 1px 0 rgba(255,255,255,0.35), 0 12px 40px rgba(0,0,0,0.22)",
+                  backdropFilter: "blur(20px)",
                   touchAction: "manipulation",
                 }}
               >
@@ -2063,9 +2045,9 @@ export default function ArrowsGame() {
                     position: "absolute",
                     inset: 0,
                     backgroundImage:
-                      "linear-gradient(rgba(74,222,128,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(248,113,113,0.10) 1px, transparent 1px)",
+                      "linear-gradient(rgba(255,255,255,0.14) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.14) 1px, transparent 1px)",
                     backgroundSize: `${cellSize}px ${cellSize}px`,
-                    opacity: 0.75,
+                    opacity: 1,
                   }}
                 />
 
@@ -2172,18 +2154,6 @@ export default function ArrowsGame() {
                 )}
               </div>
 
-              {gameState === "playing" && remaining === total && (
-                <div
-                  style={{
-                    textAlign: "center",
-                    marginTop: 6,
-                    color: "rgba(255,255,255,0.64)",
-                    fontSize: 12,
-                  }}
-                >
-                  Tap any arrow to start the chain.
-                </div>
-              )}
             </div>
           </div>
 
@@ -2192,8 +2162,8 @@ export default function ArrowsGame() {
               style={{
                 position: "fixed",
                 inset: 0,
-                background: "rgba(3, 7, 18, 0.72)",
-                backdropFilter: "blur(12px)",
+                background: "rgba(0,0,0,0.40)",
+                backdropFilter: "blur(16px)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -2204,11 +2174,12 @@ export default function ArrowsGame() {
               <div
                 style={{
                   width: "100%",
-                  maxWidth: 360,
-                  padding: "24px 22px",
-                  borderRadius: 28,
-                  background: SURFACE.panel,
-                  border: `1px solid ${SURFACE.cardBorder}`,
+                  maxWidth: 380,
+                  padding: "32px 24px",
+                  borderRadius: 32,
+                  background: "rgba(255,255,255,0.22)",
+                  backdropFilter: "blur(24px)",
+                  border: `2px solid ${SURFACE.cardBorder}`,
                   textAlign: "center",
                   animation: "fadeUp .35s ease",
                 }}
@@ -2216,9 +2187,12 @@ export default function ArrowsGame() {
                 <div
                   style={{
                     fontFamily: "'Orbitron', sans-serif",
-                    fontSize: gameState === "win" ? 32 : 28,
-                    color: gameState === "win" ? "#4ade80" : "#f87171",
-                    letterSpacing: "-0.05em",
+                    fontSize: gameState === "win" ? 36 : 30,
+                    color: "#fff",
+                    letterSpacing: "-0.03em",
+                    textShadow: gameState === "win"
+                      ? "0 0 30px rgba(56,189,248,0.8)"
+                      : "0 0 30px rgba(244,63,94,0.8)",
                   }}
                 >
                   {gameState === "win"
@@ -2226,17 +2200,6 @@ export default function ArrowsGame() {
                     : "Out of taps"}
                 </div>
 
-                <p
-                  style={{
-                    marginTop: 10,
-                    color: "rgba(255,255,255,0.72)",
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {gameState === "win"
-                    ? `Nice. Level ${level + 1} is ready, and your progress is already saved.`
-                    : `${remaining} arrows were left. Retry this level or head back to your saved progress.`}
-                </p>
 
                 <div
                   style={{
@@ -2256,11 +2219,10 @@ export default function ArrowsGame() {
                     <div
                       key={item.label}
                       style={{
-                        padding: "10px 8px",
+                        padding: "14px 8px",
                         borderRadius: 16,
-                        background:
-                          "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035))",
-                        border: `1px solid ${SURFACE.cardBorder}`,
+                        background: "rgba(255,255,255,0.18)",
+                        border: `2px solid ${SURFACE.cardBorder}`,
                       }}
                     >
                       <div
@@ -2297,32 +2259,34 @@ export default function ArrowsGame() {
                         })
                       }
                       style={{
-                        minHeight: 52,
-                        borderRadius: 18,
+                        minHeight: 62,
+                        borderRadius: 20,
                         border: "none",
                         background: SURFACE.primaryButton,
-                        color: "#062235",
+                        color: "#fff",
                         fontWeight: 800,
-                        fontSize: 16,
+                        fontSize: 18,
+                        boxShadow: "0 8px 28px rgba(249,115,22,0.40)",
                       }}
                     >
-                      Continue to level {level + 1}
+                      Continue →
                     </button>
                   ) : (
                     <button
                       className="pressable"
                       onClick={() => startLevel(level)}
                       style={{
-                        minHeight: 52,
-                        borderRadius: 18,
+                        minHeight: 62,
+                        borderRadius: 20,
                         border: "none",
                         background: SURFACE.accentButton,
                         color: "#fff",
                         fontWeight: 800,
-                        fontSize: 16,
+                        fontSize: 18,
+                        boxShadow: "0 8px 28px rgba(139,92,246,0.40)",
                       }}
                     >
-                      Retry level {level}
+                      Try again ↺
                     </button>
                   )}
 
@@ -2337,12 +2301,14 @@ export default function ArrowsGame() {
                       className="pressable"
                       onClick={() => setGameState("menu")}
                       style={{
-                        minHeight: 46,
+                        minHeight: 52,
                         borderRadius: 16,
-                        border: `1px solid ${SURFACE.cardBorder}`,
-                        background:
-                          "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
-                        color: "#f8fafc",
+                        border: `2px solid ${SURFACE.cardBorder}`,
+                        background: "rgba(255,255,255,0.20)",
+                        backdropFilter: "blur(12px)",
+                        color: "#fff",
+                        fontWeight: 700,
+                        fontSize: 15,
                       }}
                     >
                       Menu
@@ -2352,12 +2318,14 @@ export default function ArrowsGame() {
                         className="pressable"
                         onClick={() => startLevel(level)}
                         style={{
-                          minHeight: 46,
+                          minHeight: 52,
                           borderRadius: 16,
-                          border: `1px solid ${SURFACE.cardBorder}`,
-                          background:
-                            "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
-                          color: "#f8fafc",
+                          border: `2px solid ${SURFACE.cardBorder}`,
+                          background: "rgba(255,255,255,0.20)",
+                          backdropFilter: "blur(12px)",
+                          color: "#fff",
+                          fontWeight: 700,
+                          fontSize: 15,
                         }}
                       >
                         Replay
@@ -2367,15 +2335,17 @@ export default function ArrowsGame() {
                         className="pressable"
                         onClick={() => startLevel(progress.currentLevel)}
                         style={{
-                          minHeight: 46,
+                          minHeight: 52,
                           borderRadius: 16,
-                          border: `1px solid ${SURFACE.cardBorder}`,
-                          background:
-                            "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04))",
-                          color: "#f8fafc",
+                          border: `2px solid ${SURFACE.cardBorder}`,
+                          background: "rgba(255,255,255,0.20)",
+                          backdropFilter: "blur(12px)",
+                          color: "#fff",
+                          fontWeight: 700,
+                          fontSize: 15,
                         }}
                       >
-                        Resume saved
+                        Resume
                       </button>
                     )}
                   </div>
