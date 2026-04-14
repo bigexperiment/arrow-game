@@ -1,139 +1,149 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <!-- Background -->
-    <radialGradient id="bg" cx="50%" cy="38%" r="62%">
-      <stop offset="0%" stop-color="#1e4a2c"/>
-      <stop offset="55%" stop-color="#0d1f14"/>
-      <stop offset="100%" stop-color="#050c07"/>
+    <!-- Rich background: deep emerald, brighter at center -->
+    <radialGradient id="bg" cx="50%" cy="40%" r="62%">
+      <stop offset="0%"   stop-color="#1e5c30"/>
+      <stop offset="58%"  stop-color="#0a2e18"/>
+      <stop offset="100%" stop-color="#040e08"/>
     </radialGradient>
 
-    <!-- Main arrow face: bright lime at tip → lush green → deep forest at base -->
-    <linearGradient id="arrowFace" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#d4fce1"/>
-      <stop offset="14%"  stop-color="#4ade80"/>
+    <!-- Main arrow: lime-yellow at tip → vivid green → deep forest at base -->
+    <linearGradient id="gMain" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#e2fe72"/>
+      <stop offset="16%"  stop-color="#4ade80"/>
       <stop offset="58%"  stop-color="#16a34a"/>
       <stop offset="100%" stop-color="#052e16"/>
     </linearGradient>
 
-    <!-- Left-bevel shadow overlay to give 3-D depth -->
-    <linearGradient id="leftBevel" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="#000" stop-opacity="0.45"/>
-      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
-    </linearGradient>
-
-    <!-- Right-bevel subtle highlight -->
-    <linearGradient id="rightBevel" x1="1" y1="0" x2="0" y2="0">
-      <stop offset="0%"   stop-color="#fff" stop-opacity="0.12"/>
+    <!-- Candy gloss: radial from upper-left of arrow -->
+    <radialGradient id="gloss" cx="34%" cy="18%" r="56%">
+      <stop offset="0%"   stop-color="#fff" stop-opacity="0.95"/>
+      <stop offset="36%"  stop-color="#fff" stop-opacity="0.38"/>
       <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Red arrow gradient -->
+    <linearGradient id="gRed" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%"   stop-color="#7f1d1d"/>
+      <stop offset="45%"  stop-color="#f87171"/>
+      <stop offset="100%" stop-color="#fee2e2"/>
     </linearGradient>
 
-    <!-- Candy-gloss shine (white → transparent top-down) -->
-    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#fff" stop-opacity="0.78"/>
-      <stop offset="55%"  stop-color="#fff" stop-opacity="0.08"/>
-      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    <!-- Yellow arrow gradient -->
+    <linearGradient id="gYel" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0%"   stop-color="#78350f"/>
+      <stop offset="45%"  stop-color="#facc15"/>
+      <stop offset="100%" stop-color="#fef9c3"/>
     </linearGradient>
 
-    <!-- Red badge -->
-    <linearGradient id="badge" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#fca5a5"/>
-      <stop offset="100%" stop-color="#991b1b"/>
-    </linearGradient>
-
-    <!-- Small yellow arrow -->
-    <linearGradient id="yellowArr" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#fef08a"/>
-      <stop offset="100%" stop-color="#a16207"/>
-    </linearGradient>
-
-    <!-- Small mint arrow -->
-    <linearGradient id="mintArr" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#d1fae5"/>
-      <stop offset="100%" stop-color="#15803d"/>
-    </linearGradient>
-
-    <!-- Clip: full arrow shape for gloss masking -->
-    <clipPath id="arrowClip">
-      <path d="M256,78 L122,266 L204,266 L204,432 L308,432 L308,266 L390,266 Z"/>
+    <!-- Clip: main arrow for gloss -->
+    <clipPath id="clipMain">
+      <path d="M256,66 L106,268 L200,268 L200,442 L312,442 L312,268 L406,268 Z"/>
     </clipPath>
 
-    <!-- Drop-shadow for main arrow -->
-    <filter id="arrowDrop" x="-35%" y="-20%" width="170%" height="160%">
-      <feDropShadow dx="0" dy="14" stdDeviation="22" flood-color="#000" flood-opacity="0.82"/>
+    <!-- Shadow for main arrow -->
+    <filter id="fShadow" x="-30%" y="-15%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000" flood-opacity="0.85"/>
     </filter>
 
-    <!-- Soft bloom behind arrow -->
-    <filter id="bloom" x="-80%" y="-80%" width="260%" height="260%">
-      <feGaussianBlur stdDeviation="30"/>
+    <!-- Soft bloom glow -->
+    <filter id="fBloom" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="28"/>
+    </filter>
+
+    <!-- Shadow for small arrows -->
+    <filter id="fSmall" x="-50%" y="-30%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="7" stdDeviation="8" flood-color="#000" flood-opacity="0.72"/>
     </filter>
   </defs>
 
   <!-- ── BACKGROUND ── -->
   <rect width="512" height="512" rx="114" fill="url(#bg)"/>
 
-  <!-- Subtle background ring -->
-  <circle cx="256" cy="272" r="198" fill="none" stroke="#4ade80" stroke-width="1.5" opacity="0.12"/>
+  <!-- Subtle depth ring -->
+  <circle cx="256" cy="278" r="206" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.13"/>
 
-  <!-- ── GREEN BLOOM HALO behind arrow ── -->
-  <path d="M256,78 L122,266 L204,266 L204,432 L308,432 L308,266 L390,266 Z"
-        fill="#22c55e" opacity="0.28" filter="url(#bloom)"/>
+  <!-- ── BLOOM (green halo behind arrow) ── -->
+  <path d="M256,66 L106,268 L200,268 L200,442 L312,442 L312,268 L406,268 Z"
+        fill="#4ade80" opacity="0.22" filter="url(#fBloom)"/>
 
-  <!-- ── MAIN ARROW ── -->
-  <g filter="url(#arrowDrop)">
-    <path d="M256,78 L122,266 L204,266 L204,432 L308,432 L308,266 L390,266 Z"
-          fill="url(#arrowFace)"/>
+  <!-- ── MAIN ARROW — cartoon style ── -->
+  <g filter="url(#fShadow)">
+    <!-- 1. Thick round outline (drawn first = behind fill) -->
+    <path d="M256,66 L106,268 L200,268 L200,442 L312,442 L312,268 L406,268 Z"
+          fill="#021509"
+          stroke="#021509"
+          stroke-width="30"
+          stroke-linejoin="round"
+          stroke-linecap="round"/>
+    <!-- 2. Vivid color fill -->
+    <path d="M256,66 L106,268 L200,268 L200,442 L312,442 L312,268 L406,268 Z"
+          fill="url(#gMain)"/>
   </g>
 
-  <!-- Left-face bevel (left half of arrowhead darkened) -->
-  <path d="M256,78 L122,266 L204,266 L256,172 Z"
-        fill="url(#leftBevel)"/>
+  <!-- 3. Candy gloss blob (large soft highlight, upper-left) -->
+  <ellipse cx="218" cy="176" rx="112" ry="85"
+           fill="url(#gloss)" clip-path="url(#clipMain)"/>
 
-  <!-- Right-face bevel (right half of arrowhead, subtle highlight) -->
-  <path d="M256,78 L390,266 L308,266 L256,172 Z"
-        fill="url(#rightBevel)"/>
+  <!-- 4. Tight specular dot (bright white shine spot) -->
+  <ellipse cx="192" cy="132" rx="48" ry="32"
+           fill="white" opacity="0.65" clip-path="url(#clipMain)"/>
 
-  <!-- ── CANDY GLOSS (clipped ellipse on upper arrow) ── -->
-  <ellipse cx="238" cy="172" rx="92" ry="68"
-           fill="url(#shine)" clip-path="url(#arrowClip)"/>
-
-  <!-- ── BRIGHT EDGE HIGHLIGHTS ── -->
-  <!-- Top-left arrowhead edge -->
-  <path d="M256,78 L122,266"
-        fill="none" stroke="rgba(255,255,255,0.52)" stroke-width="5"
+  <!-- 5. Crisp top outline (sits above fill for clean edge) -->
+  <path d="M256,66 L106,268 L200,268 L200,442 L312,442 L312,268 L406,268 Z"
+        fill="none"
+        stroke="#021509"
+        stroke-width="18"
+        stroke-linejoin="round"
         stroke-linecap="round"/>
-  <!-- Top-right arrowhead edge (dimmer) -->
-  <path d="M256,78 L390,266"
-        fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="3"
-        stroke-linecap="round"/>
-  <!-- Left body edge -->
-  <line x1="204" y1="266" x2="204" y2="390"
-        stroke="rgba(255,255,255,0.20)" stroke-width="3" stroke-linecap="round"/>
 
-  <!-- ── RED ACCENT BADGE at arrow base ── -->
-  <rect x="204" y="388" width="104" height="44" rx="12" fill="url(#badge)"/>
-  <!-- Badge shine -->
-  <rect x="216" y="393" width="80" height="14" rx="7" fill="rgba(255,255,255,0.38)"/>
-
-  <!-- ── SMALL FLANKING ARROWS (hint at chain mechanic) ── -->
-  <!-- Yellow arrow · lower-right -->
-  <g transform="translate(390,310) rotate(35) scale(0.19)">
-    <path d="M256,78 L122,266 L204,266 L204,432 L308,432 L308,266 L390,266 Z"
-          fill="url(#yellowArr)"/>
+  <!-- ── SMALL RED ↓ ARROW (bottom-left) ── -->
+  <!-- Arrow tip at (90,434), pointing down -->
+  <g filter="url(#fSmall)">
+    <path d="M90,434 L44,372 L66,372 L66,348 L114,348 L114,372 L136,372 Z"
+          fill="#021509" stroke="#021509" stroke-width="14"
+          stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M90,434 L44,372 L66,372 L66,348 L114,348 L114,372 L136,372 Z"
+          fill="url(#gRed)"/>
+    <path d="M90,434 L44,372 L66,372 L66,348 L114,348 L114,372 L136,372 Z"
+          fill="none" stroke="#021509" stroke-width="10"
+          stroke-linejoin="round" stroke-linecap="round"/>
+    <!-- Mini gloss on red arrow -->
+    <ellipse cx="80" cy="358" rx="22" ry="13"
+             fill="white" opacity="0.45" clip-path="url(#clipMain)"/>
   </g>
-  <!-- Mint arrow · lower-left -->
-  <g transform="translate(122,310) rotate(-35) scale(0.19)">
-    <path d="M256,78 L122,266 L204,266 L204,432 L308,432 L308,266 L390,266 Z"
-          fill="url(#mintArr)"/>
+  <!-- Red arrow gloss (no clip needed, freestanding) -->
+  <ellipse cx="81" cy="358" rx="20" ry="11" fill="white" opacity="0.42"/>
+
+  <!-- ── SMALL YELLOW → ARROW (bottom-right) ── -->
+  <!-- Arrow tip at (466,394), pointing right -->
+  <g filter="url(#fSmall)">
+    <path d="M466,394 L404,350 L404,372 L380,372 L380,416 L404,416 L404,438 Z"
+          fill="#021509" stroke="#021509" stroke-width="14"
+          stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M466,394 L404,350 L404,372 L380,372 L380,416 L404,416 L404,438 Z"
+          fill="url(#gYel)"/>
+    <path d="M466,394 L404,350 L404,372 L380,372 L380,416 L404,416 L404,438 Z"
+          fill="none" stroke="#021509" stroke-width="10"
+          stroke-linejoin="round" stroke-linecap="round"/>
   </g>
+  <!-- Yellow arrow gloss -->
+  <ellipse cx="414" cy="368" rx="20" ry="11" fill="white" opacity="0.42"/>
 
-  <!-- ── BORDER ── -->
-  <!-- Outer green glow border -->
-  <rect x="5" y="5" width="502" height="502" rx="111"
-        fill="none" stroke="rgba(74,222,128,0.38)" stroke-width="4.5"/>
-  <!-- Inner subtle white line -->
-  <rect x="11" y="11" width="490" height="490" rx="106"
-        fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="2"/>
+  <!-- ── SPARKLE STARS ── -->
+  <!-- Top-right (white, large) -->
+  <polygon points="406,72 410,83 422,84 413,92 416,104 406,97 396,104 399,92 390,84 402,83"
+           fill="white" opacity="0.88"/>
+  <!-- Top-left (yellow-white, medium) -->
+  <polygon points="124,68 127,76 136,77 130,83 132,92 124,87 116,92 118,83 112,77 121,76"
+           fill="#fef9c3" opacity="0.78"/>
+  <!-- Right side (white, small) -->
+  <polygon points="454,174 456,180 463,181 457,186 459,193 454,189 449,193 451,186 445,181 452,180"
+           fill="white" opacity="0.55"/>
 
-  <!-- ── TOP OVERALL CANDY GLOSS ── -->
-  <ellipse cx="256" cy="38" rx="188" ry="52" fill="white" opacity="0.05"/>
+  <!-- ── BORDER (game icon double ring) ── -->
+  <rect x="6" y="6" width="500" height="500" rx="110"
+        fill="none" stroke="#4ade80" stroke-width="5.5" opacity="0.55"/>
+  <rect x="14" y="14" width="484" height="484" rx="104"
+        fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="2.5"/>
 </svg>
