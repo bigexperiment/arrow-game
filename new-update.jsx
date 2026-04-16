@@ -50,7 +50,11 @@ const buzz = (ms=10) => { try { if (navigator.vibrate) navigator.vibrate(ms); } 
    ═══════════════════════════════════════════════════════ */
 const I = {
   Arrow: ({s=20,c="#fff"}) => (
-    <svg width={s} height={s} viewBox="0 0 32 32" fill="none"><path d="M6 16H24M24 16L17 8.5M24 16L17 23.5" stroke={c} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    <svg width={s} height={s} viewBox="0 0 32 32" fill="none">
+      <g transform="translate(-1 0)">
+        <path d="M6 16H24M24 16L17 8.5M24 16L17 23.5" stroke={c} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+      </g>
+    </svg>
   ),
   Snow: ({s=20,c="#3b82f6"}) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
@@ -1140,9 +1144,9 @@ export default function ArrowsGame() {
 
   const csz = useMemo(() => {
     if (screen !== "playing") return 44;
-    const mw = Math.min(window.innerWidth - (isNarrow ? 16 : 24), 420);
-    const mh = window.innerHeight * (isNarrow ? 0.5 : 0.44);
-    return Math.max(36, Math.floor(Math.min(mw/curCols, mh/curRows)));
+    const mw = Math.min(window.innerWidth - (isNarrow ? 10 : 20), 424);
+    const mh = window.innerHeight * (isNarrow ? 0.56 : 0.5);
+    return Math.max(38, Math.floor(Math.min(mw/curCols, mh/curRows)));
   }, [screen, curCols, curRows, isNarrow]);
   const bw = curCols * csz;
   const bh = curRows * csz;
@@ -1478,7 +1482,7 @@ export default function ArrowsGame() {
       {screen === "playing" && (
         <div style={{
           display:"flex", flexDirection:"column", alignItems:"center",
-          width:"100%", maxWidth:440, padding:isNarrow ? "8px 8px 12px" : "10px 12px 0",
+          width:"100%", maxWidth:440, padding:isNarrow ? "6px 5px 10px" : "8px 10px 0",
           animation:"fadeIn .3s ease", position:"relative",
         }}>
           {/* Top bar */}
@@ -1561,11 +1565,11 @@ export default function ArrowsGame() {
           <div style={{
             display:"grid",
             gridTemplateColumns: isNarrow ? "repeat(3, minmax(0, 1fr))" : "repeat(3, minmax(0, 1fr))",
-            gap:isNarrow ? 8 : 0, marginBottom:isNarrow ? 8 : 10, width:"100%",
+            gap:isNarrow ? 6 : 0, marginBottom:isNarrow ? 6 : 8, width:"100%",
             background:"rgba(255,255,255,.9)",
             borderRadius:18, border:"3px solid #fff",
             boxShadow:"0 4px 12px rgba(0,0,0,.12)",
-            padding:isNarrow ? "10px" : "12px 0",
+            padding:isNarrow ? "8px" : "12px 0",
           }}>
             {[
               { l:"TAPS",  v:taps, c: taps <= 1 ? "#ef4444" : taps <= 2 ? "#f59e0b" : "#10b981" },
@@ -1592,7 +1596,7 @@ export default function ArrowsGame() {
             borderRadius:20,
             border:"3px solid rgba(255,255,255,.8)",
             boxShadow:"0 6px 16px rgba(0,0,0,.1), inset 0 2px 0 rgba(255,255,255,.5)",
-            marginBottom:isNarrow ? 6 : 0,
+            marginBottom:isNarrow ? 4 : 0,
             animation: shake ? "shake .3s ease" : "fadeIn .4s ease",
           }}>
             {/* GRID LINES — visible on board */}
