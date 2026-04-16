@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import backgroundMusicSrc from "./elicookrate-happy-202230.mp3";
 
 class SoundEngine {
   constructor() {
     this.ctx = null;
+    this.music = null;
   }
 
   init() {
@@ -166,64 +168,20 @@ class SoundEngine {
     });
   }
 
-  // Procedural background music — 16-note pentatonic loop
   startMusic() {
-    this.init();
-    this.resume();
-    if (this._musicOn) return;
-    this._musicOn = true;
-    this._musicIndex = 0;
-    this._scheduleMusicNote();
-  }
-
-  _scheduleMusicNote() {
-    if (!this._musicOn) return;
-    const ctx = this.ctx;
-    const t = ctx.currentTime;
-    // C-major pentatonic ascending/descending arc
-    const MELODY = [523, 659, 523, 440, 392, 440, 523, 659, 784, 659, 523, 659, 523, 440, 392, 330];
-    const BASS   = [131, 0,   0,   0,   196, 0,   0,   0,   131, 0,   0,   0,   196, 0,   0,   0];
-    const NOTE_LEN = 0.22; // seconds per note (~136 BPM 8th notes)
-
-    const hz     = MELODY[this._musicIndex % MELODY.length];
-    const bassHz = BASS[this._musicIndex % BASS.length];
-
-    // Melody — soft triangle wave
-    const osc  = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(hz, t);
-    gain.gain.setValueAtTime(0.038, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + NOTE_LEN * 0.82);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start(t);
-    osc.stop(t + NOTE_LEN * 0.82);
-
-    // Bass — sine wave on strong beats only
-    if (bassHz > 0) {
-      const bassOsc  = ctx.createOscillator();
-      const bassGain = ctx.createGain();
-      bassOsc.type = "sine";
-      bassOsc.frequency.setValueAtTime(bassHz, t);
-      bassGain.gain.setValueAtTime(0.028, t);
-      bassGain.gain.exponentialRampToValueAtTime(0.001, t + NOTE_LEN * 1.6);
-      bassOsc.connect(bassGain).connect(ctx.destination);
-      bassOsc.start(t);
-      bassOsc.stop(t + NOTE_LEN * 1.6);
+    if (!this.music) {
+      this.music = new Audio(backgroundMusicSrc);
+      this.music.loop = true;
+      this.music.preload = "auto";
+      this.music.volume = 0.14;
     }
-
-    this._musicIndex += 1;
-    this._musicTimer = window.setTimeout(
-      () => this._scheduleMusicNote(),
-      NOTE_LEN * 1000,
-    );
+    this.music.volume = 0.14;
+    this.music.play().catch(() => {});
   }
 
   stopMusic() {
-    this._musicOn = false;
-    if (this._musicTimer) {
-      window.clearTimeout(this._musicTimer);
-      this._musicTimer = null;
+    if (this.music) {
+      this.music.pause();
     }
   }
 }
@@ -236,6 +194,7 @@ const DEFAULT_PROGRESS = {
   bestLevel: 1,
   bestScore: 0,
   muted: false,
+  vibration: true,
 };
 
 const DIRS = {
@@ -435,6 +394,13 @@ function occupiedKeySet(chains) {
 
 function getDifficultyPreset(levelNumber) {
   return DIFFICULTY_PRESETS.find((preset) => levelNumber <= preset.maxLevel);
+}
+
+function getDifficultyLabel(levelNumber) {
+  if (levelNumber <= 2) return "Easy";
+  if (levelNumber <= 5) return "Medium";
+  if (levelNumber <= 9) return "Hard";
+  return "Expert";
 }
 
 function getLevelConfig(levelNumber) {
@@ -942,6 +908,8 @@ function loadProgress() {
       bestLevel: Math.max(1, Number(parsed.bestLevel) || 1),
       bestScore: Math.max(0, Number(parsed.bestScore) || 0),
       muted: Boolean(parsed.muted),
+      vibration:
+        typeof parsed.vibration === "boolean" ? parsed.vibration : DEFAULT_PROGRESS.vibration,
     };
   } catch {
     return DEFAULT_PROGRESS;
@@ -1128,6 +1096,8 @@ export default function ArrowsGame() {
   const [autoSolveTotal, setAutoSolveTotal] = useState(0);
   const [autoDebugEnabled, setAutoDebugEnabled] = useState(false);
   const [muted, setMuted] = useState(initialProgress.muted);
+  const [vibrationEnabled, setVibrationEnabled] = useState(initialProgress.vibration);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [viewport, setViewport] = useState({
     width: typeof window === "undefined" ? 390 : window.innerWidth,
     height: typeof window === "undefined" ? 844 : window.innerHeight,
@@ -1158,9 +1128,10 @@ export default function ArrowsGame() {
       JSON.stringify({
         ...progress,
         muted,
+        vibration: vibrationEnabled,
       }),
     );
-  }, [progress, muted]);
+  }, [progress, muted, vibrationEnabled]);
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -1217,10 +1188,11 @@ export default function ArrowsGame() {
         setAutoSolveKeys(solution);
       }
       setToast({
-        text: `Level ${targetLevel} · Solve in ${resolvedConfig.optimalTaps} taps`,
+        text: `Level ${targetLevel} · Optimal solve in ${resolvedConfig.optimalTaps} taps`,
         tone: "guide",
         duration: 1800,
       });
+      setSettingsOpen(false);
       setGameState("playing");
       setScore(options.keepScore ? (options.score ?? score) : 0);
       setProgress((current) => ({
@@ -1271,6 +1243,7 @@ export default function ArrowsGame() {
     setCombo(null);
     setAutoSolveKeys([]);
     setAutoSolveTotal(0);
+    setSettingsOpen(false);
   }, []);
 
   const handleTap = useCallback(
@@ -1539,8 +1512,10 @@ export default function ArrowsGame() {
 
   const boardWidth = levelConfig.cols * cellSize;
   const boardHeight = levelConfig.rows * cellSize;
-  const canResume = progress.currentLevel > 1;
+  const hasSavedProgress =
+    progress.currentLevel > 1 || progress.bestLevel > 1 || progress.bestScore > 0;
   const nextLevelPreview = getLevelConfig(progress.currentLevel);
+  const difficultyLabel = getDifficultyLabel(level);
 
   return (
     <div
@@ -1568,6 +1543,9 @@ export default function ArrowsGame() {
         @keyframes comboRing{0%{opacity:.85;transform:translate(-50%,-50%) scale(.45)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}}
         @keyframes toastRise{0%{opacity:0;transform:translate(-50%,8px) scale(.96)}12%{opacity:1}100%{opacity:0;transform:translate(-50%,-16px) scale(1)}}
         @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        @keyframes logoDrift{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.015)}}
+        @keyframes logoShimmer{0%{background-position:0% 50%}100%{background-position:100% 50%}}
+        @keyframes scanline{0%{transform:translateY(-120%)}100%{transform:translateY(120%)}}
         @keyframes frozenShake{0%{transform:translateX(0)}18%{transform:translateX(-7px)}36%{transform:translateX(7px)}54%{transform:translateX(-5px)}72%{transform:translateX(5px)}100%{transform:translateX(0)}}
         @keyframes frozenPulse{0%,100%{box-shadow:0 4px 12px rgba(59,130,246,0.30),inset 0 1px 0 rgba(255,255,255,0.55)}50%{box-shadow:0 0 20px rgba(99,179,237,0.75),0 4px 12px rgba(59,130,246,0.40),inset 0 1px 0 rgba(255,255,255,0.55)}}
         .frozen-cell{animation:frozenPulse 2.2s ease-in-out infinite}
@@ -1634,18 +1612,19 @@ export default function ArrowsGame() {
           <div
             style={{
               width: "100%",
-              maxWidth: 440,
+              maxWidth: 500,
               display: "grid",
-              gap: 12,
+              gap: 14,
               animation: "fadeUp .5s ease",
               maxHeight: "100%",
             }}
           >
             <div
               style={{
-                padding: "22px 18px 18px",
-                borderRadius: 28,
-                background: "rgba(255,255,255,0.20)",
+                padding: viewport.width < 420 ? "28px 20px 20px" : "34px 28px 22px",
+                borderRadius: 32,
+                background:
+                  "linear-gradient(160deg, rgba(17,24,39,0.28), rgba(255,255,255,0.12))",
                 backdropFilter: "blur(24px)",
                 border: `2px solid ${SURFACE.cardBorder}`,
                 boxShadow: "0 24px 60px rgba(0,0,0,0.18)",
@@ -1656,22 +1635,22 @@ export default function ArrowsGame() {
               <div
                 style={{
                   position: "absolute",
-                  right: -18,
-                  top: -14,
-                  width: 124,
-                  height: 124,
+                  right: -28,
+                  top: -24,
+                  width: 150,
+                  height: 150,
                   borderRadius: 999,
                   background:
-                    "radial-gradient(circle, rgba(56,189,248,0.45), transparent 62%)",
+                    "radial-gradient(circle, rgba(56,189,248,0.42), transparent 62%)",
                 }}
               />
               <div
                 style={{
                   position: "absolute",
                   left: -28,
-                  bottom: -42,
-                  width: 150,
-                  height: 150,
+                  bottom: -56,
+                  width: 170,
+                  height: 170,
                   borderRadius: 999,
                   background:
                     "radial-gradient(circle, rgba(251,146,60,0.40), transparent 66%)",
@@ -1679,196 +1658,190 @@ export default function ArrowsGame() {
               />
               <div
                 style={{
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "linear-gradient(180deg, transparent, rgba(255,255,255,0.1), transparent)",
+                  opacity: 0.22,
+                  animation: "scanline 6s linear infinite",
+                  pointerEvents: "none",
+                }}
+              />
+              <div
+                style={{
                   display: "inline-flex",
                   gap: 10,
-                  padding: "8px 12px",
+                  padding: "6px 10px",
                   borderRadius: 999,
-                  background: SURFACE.chip,
-                  color: "rgba(255,255,255,0.82)",
-                  fontSize: 12,
-                  letterSpacing: "0.08em",
+                  background: "rgba(255,255,255,0.12)",
+                  color: "rgba(255,255,255,0.74)",
+                  fontSize: 11,
+                  letterSpacing: "0.12em",
                   textTransform: "uppercase",
                 }}
               >
-                Endless chain puzzle
+                One more run
               </div>
 
               <div
                 style={{
                   marginTop: 18,
                   fontFamily: "'Orbitron', sans-serif",
-                  fontSize: viewport.width < 420 ? 38 : 46,
-                  lineHeight: 0.95,
-                  letterSpacing: "-0.06em",
+                  fontSize: viewport.width < 420 ? 56 : 78,
+                  lineHeight: 0.88,
+                  letterSpacing: "-0.07em",
+                  animation: "logoDrift 3.8s ease-in-out infinite",
+                  textShadow: "0 0 28px rgba(255,255,255,0.08)",
                 }}
               >
                 Arrow
                 <span
                   style={{
                     background:
-                      "linear-gradient(135deg, #4ade80, #22c55e 55%, #f87171)",
+                      "linear-gradient(135deg, #4ade80, #22c55e 45%, #38bdf8 72%, #f87171)",
+                    backgroundSize: "200% 200%",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                     textShadow: "0 0 28px rgba(74,222,128,0.2)",
+                    animation: "logoShimmer 5s linear infinite",
                   }}
                 >
                   X
                 </span>
               </div>
 
+              <div
+                style={{
+                  marginTop: 12,
+                  display: "flex",
+                  gap: 10,
+                  flexWrap: "wrap",
+                }}
+              >
+                <div
+                  style={{
+                    padding: "7px 11px",
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,0.1)",
+                    color: "rgba(255,255,255,0.82)",
+                    fontSize: 12,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Chain shots
+                </div>
+                <div
+                  style={{
+                    padding: "7px 11px",
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,0.1)",
+                    color: "rgba(255,255,255,0.82)",
+                    fontSize: 12,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Perfect taps
+                </div>
+              </div>
 
               <div
                 style={{
                   marginTop: 22,
                   display: "grid",
                   gridTemplateColumns: "1fr",
-                  gap: 10,
-                }}
-              >
-                <div
-                  style={{
-                    padding: "12px 10px",
-                    borderRadius: 18,
-                    background:
-                      "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
-                    border: `1px solid ${SURFACE.cardBorder}`,
-                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontFamily: "'Orbitron', sans-serif",
-                      fontSize: 22,
-                      color: "#f8fafc",
-                    }}
-                  >
-                    {progress.currentLevel}
-                  </div>
-                  <div
-                    style={{
-                      marginTop: 4,
-                      fontSize: 11,
-                      color: "rgba(255,255,255,0.58)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.08em",
-                    }}
-                  >
-                    Saved level
-                  </div>
-                  <div
-                    style={{
-                      marginTop: 6,
-                      fontSize: 11,
-                      color: "rgba(255,255,255,0.5)",
-                    }}
-                  >
-                    Optimal solve: {nextLevelPreview.optimalTaps} taps
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  marginTop: 20,
-                  display: "grid",
-                  gap: 10,
+                  gap: 12,
                 }}
               >
                 <button
                   className="pressable"
                   onClick={() => {
                     sfx.init();
-                    startLevel(progress.currentLevel);
+                    startLevel(1);
                   }}
                   style={{
-                    minHeight: 68,
+                    minHeight: 72,
                     borderRadius: 20,
                     border: "none",
                     background: SURFACE.primaryButton,
                     color: "#fff",
                     fontWeight: 800,
-                    fontSize: 20,
-                    letterSpacing: "0.02em",
+                    fontSize: 22,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
                     boxShadow: "0 8px 32px rgba(249,115,22,0.45), 0 2px 0 rgba(255,255,255,0.25) inset",
                     animation: "pulseGlow 2.6s ease-in-out infinite",
                   }}
                 >
-                  {canResume
-                    ? `Continue from level ${progress.currentLevel}`
-                    : "Start level 1"}
+                  Play
                 </button>
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr auto",
-                    gap: 10,
-                  }}
-                >
+                {hasSavedProgress && (
                   <button
                     className="pressable"
                     onClick={() => {
                       sfx.init();
-                      startLevel(1);
+                      startLevel(progress.currentLevel);
                     }}
                     style={{
                       minHeight: 56,
                       borderRadius: 16,
-                      border: "2px solid rgba(30,10,60,0.14)",
-                      background: "rgba(255,255,255,0.72)",
+                      border: "1px solid rgba(255,255,255,0.24)",
+                      background: "rgba(255,255,255,0.12)",
                       backdropFilter: "blur(12px)",
-                      color: "#1e0a3c",
+                      color: "#fff",
                       fontWeight: 700,
                       fontSize: 15,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
                     }}
                   >
-                    Fresh run
+                    Continue L{progress.currentLevel}
                   </button>
-                  <button
-                    className="pressable"
-                    onClick={() => {
-                      sfx.init();
-                      setMuted((value) => !value);
-                    }}
-                    style={{
-                      minHeight: 56,
-                      minWidth: 80,
-                      borderRadius: 16,
-                      border: "2px solid rgba(30,10,60,0.14)",
-                      background: "rgba(255,255,255,0.72)",
-                      backdropFilter: "blur(12px)",
-                      color: "#1e0a3c",
-                      fontWeight: 700,
-                      fontSize: 18,
-                    }}
-                  >
-                    {muted ? "Mute" : "Sound"}
-                  </button>
-                </div>
+                )}
+
+                <button
+                  className="pressable"
+                  onClick={() => {
+                    sfx.init();
+                    setMuted((value) => !value);
+                  }}
+                  style={{
+                    minHeight: 56,
+                    borderRadius: 16,
+                    border: "1px solid rgba(255,255,255,0.24)",
+                    background: "rgba(255,255,255,0.12)",
+                    backdropFilter: "blur(12px)",
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {muted ? "Sound off" : "Sound on"}
+                </button>
               </div>
             </div>
 
-            <div
-              style={{
-                display: "grid",
-                gap: 12,
-              }}
-            >
+            {hasSavedProgress && (
               <div
                 style={{
                   padding: 14,
-                  borderRadius: 20,
-                  background: "rgba(255,255,255,0.80)",
+                  borderRadius: 22,
+                  background: "rgba(255,255,255,0.12)",
                   backdropFilter: "blur(16px)",
-                  border: "2px solid rgba(255,255,255,0.95)",
+                  border: "1px solid rgba(255,255,255,0.24)",
+                  boxShadow: "0 16px 36px rgba(0,0,0,0.12)",
                 }}
               >
                 <div
                   style={{
                     fontSize: 12,
-                    color: "rgba(255,255,255,0.58)",
+                    color: "rgba(255,255,255,0.62)",
                     textTransform: "uppercase",
-                    letterSpacing: "0.08em",
+                    letterSpacing: "0.12em",
                     marginBottom: 8,
                   }}
                 >
@@ -1893,15 +1866,19 @@ export default function ArrowsGame() {
                   </div>
                   <div>
                     <div
-                      style={{ fontFamily: "'Orbitron', sans-serif", fontSize: 22 }}
+                      style={{ fontFamily: "'Orbitron', sans-serif", fontSize: 20, color: "#fff" }}
                     >
                       Level {nextLevelPreview.levelNumber}: {nextLevelPreview.title}
                     </div>
                     <div
-                      style={{ color: "rgba(255,255,255,0.64)", marginTop: 4 }}
+                      style={{ color: "rgba(255,255,255,0.72)", marginTop: 4, fontSize: 13 }}
                     >
-                      {nextLevelPreview.cols}x{nextLevelPreview.rows} board ·{" "}
-                      {nextLevelPreview.taps} taps
+                      {nextLevelPreview.cols}x{nextLevelPreview.rows} board
+                    </div>
+                    <div
+                      style={{ color: "rgba(255,255,255,0.56)", marginTop: 4, fontSize: 12 }}
+                    >
+                      Optimal {nextLevelPreview.optimalTaps} taps
                     </div>
                   </div>
                 </div>
@@ -1913,16 +1890,17 @@ export default function ArrowsGame() {
                     minHeight: 42,
                     width: "100%",
                     borderRadius: 14,
-                    border: `1px solid ${SURFACE.cardBorder}`,
-                    background:
-                      "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.035))",
-                    color: "rgba(255,255,255,0.82)",
+                    border: "1px solid rgba(255,255,255,0.18)",
+                    background: "rgba(255,255,255,0.08)",
+                    color: "rgba(255,255,255,0.86)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
                   }}
                 >
-                  Reset saved progress
+                  Reset run
                 </button>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -1938,6 +1916,195 @@ export default function ArrowsGame() {
             overflow: "hidden",
           }}
         >
+          {settingsOpen && (
+            <>
+              <button
+                aria-label="Close settings"
+                onClick={() => setSettingsOpen(false)}
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  border: "none",
+                  background: "rgba(30,10,60,0.28)",
+                  backdropFilter: "blur(8px)",
+                  zIndex: 25,
+                }}
+              />
+              <div
+                style={{
+                  position: "fixed",
+                  top: 18,
+                  right: 18,
+                  width: "min(320px, calc(100vw - 24px))",
+                  padding: 18,
+                  borderRadius: 24,
+                  background:
+                    "linear-gradient(180deg, rgba(255,252,245,0.96), rgba(245,240,255,0.94))",
+                  border: "2px solid rgba(255,255,255,0.95)",
+                  boxShadow: "0 18px 48px rgba(30,10,60,0.24)",
+                  zIndex: 26,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontFamily: "'Orbitron', sans-serif",
+                        fontSize: 18,
+                        color: "#6b3f12",
+                      }}
+                    >
+                      Settings
+                    </div>
+                    <div
+                      style={{
+                        marginTop: 4,
+                        fontSize: 12,
+                        color: "rgba(30,10,60,0.54)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                      }}
+                    >
+                      Adjust your run
+                    </div>
+                  </div>
+                  <button
+                    className="pressable"
+                    onClick={() => setSettingsOpen(false)}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 14,
+                      border: "1px solid rgba(30,10,60,0.12)",
+                      background: "rgba(255,255,255,0.85)",
+                      color: "#1e0a3c",
+                      fontSize: 20,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 16,
+                    display: "grid",
+                    gap: 10,
+                  }}
+                >
+                  {[
+                    {
+                      label: "Sound",
+                      value: muted ? "Off" : "On",
+                      action: () => setMuted((value) => !value),
+                    },
+                    {
+                      label: "Vibration",
+                      value: vibrationEnabled ? "On" : "Off",
+                      action: () => setVibrationEnabled((value) => !value),
+                      note: "Placeholder for now",
+                    },
+                  ].map((item) => (
+                    <button
+                      key={item.label}
+                      className="pressable"
+                      onClick={item.action}
+                      style={{
+                        minHeight: 56,
+                        width: "100%",
+                        borderRadius: 18,
+                        border: "1px solid rgba(30,10,60,0.1)",
+                        background: "rgba(255,255,255,0.82)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "0 16px",
+                        color: "#1e0a3c",
+                        textAlign: "left",
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 16 }}>{item.label}</div>
+                        {item.note && (
+                          <div
+                            style={{
+                              marginTop: 2,
+                              fontSize: 11,
+                              color: "rgba(30,10,60,0.5)",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.08em",
+                            }}
+                          >
+                            {item.note}
+                          </div>
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          padding: "6px 10px",
+                          borderRadius: 999,
+                          background:
+                            item.value === "On"
+                              ? "linear-gradient(135deg, rgba(56,189,248,0.18), rgba(168,85,247,0.16))"
+                              : "rgba(30,10,60,0.08)",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.08em",
+                        }}
+                      >
+                        {item.value}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 14,
+                    display: "grid",
+                    gap: 10,
+                  }}
+                >
+                  <button
+                    className="pressable"
+                    onClick={() => startLevel(level)}
+                    style={{
+                      minHeight: 52,
+                      borderRadius: 18,
+                      border: "1px solid rgba(30,10,60,0.12)",
+                      background: "rgba(255,255,255,0.82)",
+                      color: "#1e0a3c",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Restart level
+                  </button>
+                  <button
+                    className="pressable"
+                    onClick={clearProgress}
+                    style={{
+                      minHeight: 52,
+                      borderRadius: 18,
+                      border: "1px solid rgba(190,24,93,0.18)",
+                      background: "linear-gradient(135deg, rgba(255,241,242,0.94), rgba(255,237,213,0.92))",
+                      color: "#9f1239",
+                      fontWeight: 800,
+                    }}
+                  >
+                    Reset saved progress
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
           <div
             style={{
               width: "100%",
@@ -1963,132 +2130,100 @@ export default function ArrowsGame() {
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 8,
-                  flexWrap: "wrap",
+                  alignItems: "flex-start",
+                  gap: 12,
+                  marginBottom: 12,
                 }}
               >
-                <div>
+                <button
+                  className="pressable"
+                  onClick={() => {
+                    setSettingsOpen(false);
+                    setGameState("menu");
+                  }}
+                  aria-label="Back to menu"
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 16,
+                    border: "2px solid rgba(255,255,255,0.9)",
+                    background: "rgba(255,255,255,0.6)",
+                    color: "#7c5b36",
+                    fontSize: 28,
+                    lineHeight: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 8px 16px rgba(120,87,45,0.08)",
+                  }}
+                >
+                  ←
+                </button>
+
+                <div
+                  style={{
+                    flex: 1,
+                    textAlign: "center",
+                    paddingTop: 4,
+                  }}
+                >
                   <div
                     style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "6px 10px",
-                      borderRadius: 999,
-                      background: "rgba(30,10,60,0.10)",
-                      color: "rgba(30,10,60,0.70)",
-                      fontSize: 11,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.08em",
-                    }}
-                  >
-                    Level {level} • {levelConfig.title}
-                  </div>
-                  <div
-                    style={{
-                      marginTop: 4,
-                      fontFamily: "'Orbitron', sans-serif",
-                      fontSize: viewport.width < 420 ? 20 : 26,
-                      letterSpacing: "-0.05em",
+                      fontSize: viewport.width < 420 ? 14 : 16,
+                      fontWeight: 800,
+                      color: "#c77b2a",
+                      letterSpacing: "0.02em",
                       lineHeight: 1,
                     }}
                   >
-                    {`Level ${level}: ${levelConfig.title}`}
-                    {/*
-                    Debug-only score display. Keeping this commented so it is easy
-                    to restore later while hidden from normal gameplay.
-                    {autoDebugEnabled && (
-                      <span
-                        style={{
-                          marginLeft: 8,
-                          fontFamily: "'Rajdhani', system-ui, sans-serif",
-                          fontSize: viewport.width < 420 ? 11 : 12,
-                          color: "rgba(94,234,212,0.72)",
-                          letterSpacing: "0.03em",
-                          fontWeight: 600,
-                        }}
-                      >
-                        debug score {debugDifficultyScore}
-                      </span>
-                    )}
-                    */}
+                    Level {level}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 2,
+                      fontFamily: "'Orbitron', sans-serif",
+                      fontSize: viewport.width < 420 ? 24 : 30,
+                      letterSpacing: "-0.05em",
+                      color: "#6b3f12",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {levelConfig.title}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 2,
+                      fontSize: viewport.width < 420 ? 14 : 16,
+                      fontWeight: 800,
+                      color: "#7c3aed",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {difficultyLabel}
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    className="pressable"
-                    onClick={() => setGameState("menu")}
-                    style={{
-                      minHeight: 42,
-                      padding: "0 14px",
-                      borderRadius: 14,
-                      border: `2px solid ${SURFACE.cardBorder}`,
-                      background: "rgba(255,255,255,0.70)",
-                      backdropFilter: "blur(12px)",
-                      color: "#1e0a3c",
-                      fontSize: 14,
-                      fontWeight: 700,
-                    }}
-                  >
-                    Menu
-                  </button>
-                  <button
-                    className="pressable"
-                    onClick={() => startLevel(level)}
-                    style={{
-                      minHeight: 42,
-                      padding: "0 14px",
-                      borderRadius: 14,
-                      border: `2px solid ${SURFACE.cardBorder}`,
-                      background: "rgba(255,255,255,0.70)",
-                      backdropFilter: "blur(12px)",
-                      color: "#1e0a3c",
-                      fontSize: 14,
-                      fontWeight: 700,
-                    }}
-                  >
-                    ↺
-                  </button>
-                  {/*
-                  Debug-only autoplay control. Commented out for now so normal
-                  players do not see it, but the implementation remains easy to
-                  re-enable later.
-                  <button
-                    className="pressable"
-                    onClick={triggerAutoSolve}
-                    style={{
-                      minHeight: 36,
-                      padding: "0 10px",
-                      borderRadius: 12,
-                      border: "1px dashed rgba(255,255,255,0.18)",
-                      background: "rgba(255,255,255,0.035)",
-                      color: "rgba(255,255,255,0.72)",
-                      fontSize: 12,
-                    }}
-                  >
-                    {autoDebugEnabled ? "Stop auto debug" : "Auto debug"}
-                  </button>
-                  */}
-                  <button
-                    className="pressable"
-                    onClick={() => setMuted((value) => !value)}
-                    style={{
-                      minHeight: 42,
-                      padding: "0 14px",
-                      borderRadius: 14,
-                      border: `2px solid ${SURFACE.cardBorder}`,
-                      background: "rgba(255,255,255,0.22)",
-                      backdropFilter: "blur(12px)",
-                      color: "#fff",
-                      fontSize: 18,
-                    }}
-                  >
-                    {muted ? "🔇" : "🔊"}
-                  </button>
-                </div>
+                <button
+                  className="pressable"
+                  onClick={() => setSettingsOpen((value) => !value)}
+                  aria-label="Open settings"
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 16,
+                    border: "2px solid rgba(255,255,255,0.9)",
+                    background: "rgba(255,255,255,0.6)",
+                    color: "#7c5b36",
+                    fontSize: 24,
+                    lineHeight: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 8px 16px rgba(120,87,45,0.08)",
+                  }}
+                >
+                  ⚙
+                </button>
               </div>
 
               <div
