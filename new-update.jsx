@@ -1128,16 +1128,16 @@ export default function ArrowsGame() {
 
   const rem = Object.values(board).filter(c => c.state !== "cleared").length;
   const frozenLeft = Object.values(board).filter(c => c.state !== "cleared" && c.frozen).length;
+  const isNarrow = typeof window !== "undefined" ? window.innerWidth <= 420 : true;
 
   const csz = useMemo(() => {
     if (screen !== "playing") return 44;
-    const mw = Math.min(window.innerWidth - 24, 420);
-    const mh = window.innerHeight * 0.44;
-    return Math.floor(Math.min(mw/curCols, mh/curRows));
-  }, [screen, curCols, curRows]);
+    const mw = Math.min(window.innerWidth - (isNarrow ? 16 : 24), 420);
+    const mh = window.innerHeight * (isNarrow ? 0.5 : 0.44);
+    return Math.max(36, Math.floor(Math.min(mw/curCols, mh/curRows)));
+  }, [screen, curCols, curRows, isNarrow]);
   const bw = curCols * csz;
   const bh = curRows * csz;
-  const pct = total > 0 ? ((total - rem) / total) * 100 : 0;
   const totalStars = Object.values(starsMap).reduce((a,b) => a+b, 0);
 
   // Show tutorial pointer above this cell
@@ -1325,7 +1325,6 @@ export default function ArrowsGame() {
             </button>
           </div>
 
-          {/* The vertical path */}
           <div style={{
             flex:1, display:"flex", flexDirection:"column",
             alignItems:"center", justifyContent:"center",
@@ -1333,9 +1332,8 @@ export default function ArrowsGame() {
           }}>
             {/* Upcoming level (N+1) */}
             <div style={{animation:"slideUp .4s .1s ease both", marginBottom:6}}>
-              <LevelNode level={level+1} status="locked" size={62}/>
+              <LevelNode level={level+1} status="locked" size={54}/>
             </div>
-
             {/* Dashed connector */}
             <div style={{
               width:4, height:30,
@@ -1345,7 +1343,9 @@ export default function ArrowsGame() {
             }}/>
 
             {/* Marker + current level container */}
-            <div style={{position:"relative", animation:"slideUp .4s .2s ease both"}}>
+            <div style={{
+              position:"relative", animation:"slideUp .4s .2s ease both",
+            }}>
               {/* Marker character */}
               <div style={{
                 position:"absolute",
@@ -1433,7 +1433,8 @@ export default function ArrowsGame() {
             )}
             {level === 1 && (
               <div style={{
-                marginTop:8, fontSize:".65rem", color:"#7c3aed",
+                marginTop:8,
+                fontSize:".65rem", color:"#7c3aed",
                 fontFamily:"'Fredoka', sans-serif", fontWeight:600,
                 letterSpacing:"2px", opacity:.6,
               }}>START OF JOURNEY</div>
@@ -1469,19 +1470,19 @@ export default function ArrowsGame() {
       {screen === "playing" && (
         <div style={{
           display:"flex", flexDirection:"column", alignItems:"center",
-          width:"100%", maxWidth:440, padding:"10px 12px 0",
+          width:"100%", maxWidth:440, padding:isNarrow ? "8px 8px 12px" : "10px 12px 0",
           animation:"fadeIn .3s ease", position:"relative",
         }}>
           {/* Top bar */}
           <div style={{
             display:"flex", justifyContent:"space-between", alignItems:"center",
-            width:"100%", marginBottom:10,
+            width:"100%", marginBottom:isNarrow ? 8 : 10, gap:isNarrow ? 6 : 8,
           }}>
             <button onClick={goToMap} className="btn"
               style={{
                 background:"linear-gradient(145deg, #fff, #f3f4f6)",
                 border:"2px solid #fff", borderRadius:12,
-                padding:"8px 14px", color:"#6b21a8",
+                padding:isNarrow ? "8px 10px" : "8px 14px", color:"#6b21a8",
                 fontFamily:"'Baloo 2', sans-serif",
                 fontSize:".75rem", fontWeight:700,
                 cursor:"pointer", letterSpacing:"1px",
@@ -1491,15 +1492,20 @@ export default function ArrowsGame() {
               <I.Chevron s={16}/> MAP
             </button>
             <div style={{
-              background:"rgba(255,255,255,.9)", padding:"6px 14px",
+              background:"rgba(255,255,255,.9)", padding:isNarrow ? "6px 10px" : "6px 14px",
               borderRadius:14, border:"2px solid #fff",
               boxShadow:"0 3px 8px rgba(0,0,0,.1)",
               display:"flex", alignItems:"center", gap:6,
+              minWidth:0, flex:1, justifyContent:"center",
             }}>
-              <span style={{fontFamily:"'Baloo 2', sans-serif", fontWeight:800, fontSize:".8rem", color:"#7c3aed"}}>LV.{level}</span>
-              <span style={{fontFamily:"'Baloo 2', sans-serif", fontWeight:700, fontSize:".85rem", color:DIR_COLORS[(level-1)%4]}}>{info.name}</span>
+              <span style={{fontFamily:"'Baloo 2', sans-serif", fontWeight:800, fontSize:isNarrow ? ".9rem" : "1rem", color:"#7c3aed", flexShrink:0}}>LEVEL {level}</span>
+              <span style={{
+                fontFamily:"'Baloo 2', sans-serif", fontWeight:700,
+                fontSize:isNarrow ? ".84rem" : ".92rem", color:DIR_COLORS[(level-1)%4],
+                whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis",
+              }}>{info.name}</span>
             </div>
-            <div style={{display:"flex", gap:6}}>
+            <div style={{display:"flex", gap:6, flexShrink:0}}>
               <button onClick={() => { sfx.click(); vib(8); startLevel(level); }} className="btn"
                 style={{
                   background:"linear-gradient(145deg, #fff, #f3f4f6)",
@@ -1526,14 +1532,14 @@ export default function ArrowsGame() {
           {/* TUTORIAL BANNER */}
           {isTutorial && tutorialText && (
             <div style={{
-              width:"100%", marginBottom:10,
+              width:"100%", marginBottom:isNarrow ? 8 : 10,
               background:"linear-gradient(135deg, #fbbf24, #ec4899)",
-              padding:"12px 16px",
+              padding:isNarrow ? "10px 12px" : "12px 16px",
               borderRadius:16, border:"3px solid #fff",
               boxShadow:"0 4px 12px rgba(0,0,0,.15)",
               color:"#fff",
               fontFamily:"'Baloo 2', sans-serif", fontWeight:700,
-              fontSize:".85rem",
+              fontSize:isNarrow ? ".8rem" : ".85rem",
               display:"flex", alignItems:"center", gap:10,
               animation:"popIn .5s ease both",
               textShadow:"0 1px 2px rgba(0,0,0,.25)",
@@ -1545,51 +1551,40 @@ export default function ArrowsGame() {
 
           {/* Stats */}
           <div style={{
-            display:"flex", gap:0, marginBottom:10, width:"100%",
+            display:"grid",
+            gridTemplateColumns: isNarrow ? "repeat(3, minmax(0, 1fr))" : "repeat(3, minmax(0, 1fr))",
+            gap:isNarrow ? 8 : 0, marginBottom:isNarrow ? 8 : 10, width:"100%",
             background:"rgba(255,255,255,.9)",
             borderRadius:18, border:"3px solid #fff",
             boxShadow:"0 4px 12px rgba(0,0,0,.12)",
-            padding:"12px 0",
+            padding:isNarrow ? "10px" : "12px 0",
           }}>
             {[
               { l:"TAPS",  v:taps, c: taps <= 1 ? "#ef4444" : taps <= 2 ? "#f59e0b" : "#10b981" },
               { l:"LEFT",  v:rem,  c:"#f59e0b" },
-              ...(frozenLeft > 0 ? [{ l:"FROZEN", v:frozenLeft, c:"#3b82f6" }] : []),
               { l:"SCORE", v:score, c:"#8b5cf6" },
             ].map(({l:label,v,c},i,a) => (
               <div key={label} style={{
                 flex:1, textAlign:"center",
-                borderRight: i < a.length-1 ? "2px solid rgba(0,0,0,.06)" : "none",
+                borderRight: !isNarrow && i < a.length-1 ? "2px solid rgba(0,0,0,.06)" : "none",
+                background:isNarrow ? "rgba(255,255,255,.55)" : "transparent",
+                borderRadius:isNarrow ? 14 : 0,
+                padding:isNarrow ? "8px 4px" : 0,
               }}>
-                <div style={{fontFamily:"'Baloo 2', sans-serif", fontWeight:800, fontSize:"1.55rem", color:c, lineHeight:1, transition:"color .3s"}}>{v}</div>
-                <div style={{fontSize:".58rem", color:"#6b21a8", fontFamily:"'Fredoka', sans-serif", letterSpacing:"1.5px", marginTop:4, fontWeight:600}}>{label}</div>
+                <div style={{fontFamily:"'Baloo 2', sans-serif", fontWeight:800, fontSize:isNarrow ? "1.35rem" : "1.55rem", color:c, lineHeight:1, transition:"color .3s"}}>{v}</div>
+                <div style={{fontSize:isNarrow ? ".54rem" : ".58rem", color:"#6b21a8", fontFamily:"'Fredoka', sans-serif", letterSpacing:"1.5px", marginTop:4, fontWeight:600}}>{label}</div>
               </div>
             ))}
           </div>
 
-          {/* Progress */}
-          <div style={{
-            width:"100%", height:10,
-            background:"rgba(255,255,255,.8)", borderRadius:10,
-            marginBottom:12, overflow:"hidden",
-            border:"2px solid #fff",
-            boxShadow:"0 2px 6px rgba(0,0,0,.1)",
-          }}>
-            <div style={{
-              height:"100%", borderRadius:6, width:`${pct}%`,
-              background:"linear-gradient(90deg, #22c55e 0%, #f59e0b 50%, #ec4899 100%)",
-              transition:"width .4s ease",
-              boxShadow:"0 0 8px rgba(245,158,11,.5), inset 0 -1px 0 rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.4)",
-            }}/>
-          </div>
-
           {/* Board */}
           <div ref={boardRef} style={{
-            position:"relative", width:bw, height:bh,
+            position:"relative", width:bw, height:bh, maxWidth:"100%",
             background:"rgba(255,255,255,.45)",
             borderRadius:20,
             border:"3px solid rgba(255,255,255,.8)",
             boxShadow:"0 6px 16px rgba(0,0,0,.1), inset 0 2px 0 rgba(255,255,255,.5)",
+            marginBottom:isNarrow ? 6 : 0,
             animation: shake ? "shake .3s ease" : "fadeIn .4s ease",
           }}>
             {/* GRID LINES — visible on board */}
