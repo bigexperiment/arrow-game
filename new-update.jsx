@@ -5,6 +5,8 @@ import { useState, useCallback, useRef, useMemo, useEffect } from "react";
    ═══════════════════════════════════════════════════════ */
 const memStore = {};
 const STORE_KEY = "arrows-game-progress-v2";
+const START_LEVEL_OVERRIDE = 100; // Set to `null` to restore normal start/progress behavior.
+const DEFAULT_LEVEL = START_LEVEL_OVERRIDE ?? 1;
 const storage = {
   load() {
     try {
@@ -308,13 +310,16 @@ function verifyChains(boardMap, chains, cols, rows) {
   return true;
 }
 
-function assignFrozen(chains, maxPerChain) {
-  if (maxPerChain <= 0) return;
+function assignFrozen(chains, maxPerChain, maxTotal = Infinity) {
+  if (maxPerChain <= 0 || maxTotal <= 0) return;
+  let frozenPlaced = 0;
   for (const chain of chains) {
+    if (frozenPlaced >= maxTotal) break;
     if (chain.length <= 1) continue;
     const cand = chain.slice(1).sort(() => Math.random()-.5);
-    const n = Math.min(maxPerChain, cand.length);
+    const n = Math.min(maxPerChain, cand.length, maxTotal - frozenPlaced);
     for (let i = 0; i < n; i++) cand[i].frozen = true;
+    frozenPlaced += n;
   }
 }
 
@@ -525,7 +530,7 @@ function generateValidBoard(lv) {
       insertDecoys(chains, lv.cols, lv.rows, lv.decoyCount);
       if (hasCrossChainInterference(chains, lv.cols, lv.rows)) continue;
     }
-    assignFrozen(chains, lv.frozenPerChain);
+    assignFrozen(chains, lv.frozenPerChain, lv.maxFrozenTotal);
     const board = {};
     chains.forEach(chain => {
       chain.forEach(cell => { board[keyOf(cell.x, cell.y)] = { ...cell, state: "idle" }; });
@@ -610,14 +615,15 @@ function getLevelInfo(level) {
   const chainCount = Math.min(6, 2 + Math.floor(tier/2));
   const chainLenMin = 3;
   const chainLenMax = Math.max(3, 6 - Math.floor(tier/4));
-  const frozenPerChain = Math.min(3, Math.floor(tier/3));
+  const frozenPerChain = tier < 8 ? 0 : 1;
+  const maxFrozenTotal = tier < 8 ? 0 : tier < 20 ? 1 : 2;
   const decoyCount = Math.min(6, Math.max(0, Math.floor(tier / 2)));
   const bonus = tier < 2 ? 3 : tier < 5 ? 2 : 1;
 
   return {
     name, tagline: "Chain the arrows",
     cols, rows, chainCount, chainLenMin, chainLenMax,
-    frozenPerChain, decoyCount, bonus,
+    frozenPerChain, maxFrozenTotal, decoyCount, bonus,
     gapMin: 1,
     gapMax: Math.min(3, 2 + Math.floor(tier/8)),
     isTutorial: false,
@@ -921,11 +927,13 @@ export default function ArrowsGame() {
   useEffect(() => {
     const saved = storage.load();
     if (saved) {
-      setLevel(saved.level || 1);
+      setLevel(START_LEVEL_OVERRIDE ?? (saved.level || DEFAULT_LEVEL));
       setStarsMap(saved.starsMap || {});
       setBestScores(saved.bestScores || {});
       if (typeof saved.soundOn === "boolean") setSoundOn(saved.soundOn);
       if (typeof saved.hapticsOn === "boolean") setHapticsOn(saved.hapticsOn);
+    } else {
+      setLevel(DEFAULT_LEVEL);
     }
     setLoaded(true);
   }, []);
@@ -1117,7 +1125,7 @@ export default function ArrowsGame() {
 
   const resetAll = useCallback(() => {
     storage.clear();
-    setLevel(1);
+    setLevel(DEFAULT_LEVEL);
     setStarsMap({});
     setBestScores({});
     setShowResetConfirm(false);
