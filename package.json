@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:ios-web": "npm run build && node scripts/prepare-ios-web-assets.mjs",
     "preview": "vite preview",
     "simulate:games": "node scripts/simulate-games.mjs"
   },

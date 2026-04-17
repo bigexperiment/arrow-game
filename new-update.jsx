@@ -7,6 +7,21 @@ const memStore = {};
 const STORE_KEY = "arrows-game-progress-v2";
 const START_LEVEL_OVERRIDE = 100; // Set to `null` to restore normal start/progress behavior.
 const DEFAULT_LEVEL = START_LEVEL_OVERRIDE ?? 1;
+function nativePost(handlerName, payload) {
+  try {
+    const handler = window.webkit?.messageHandlers?.[handlerName];
+    if (!handler) return false;
+    handler.postMessage(payload);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function notifyNative({ title, body = "", delayMs = 0 }) {
+  return nativePost("notifications", { title, body, delayMs });
+}
+
 const storage = {
   load() {
     try {
@@ -43,7 +58,10 @@ class SFX {
   nope(){this.play(c=>{const t=c.currentTime;[300,260,220].forEach((f,i)=>{const d=i*.04,o=c.createOscillator(),g=c.createGain();o.type="square";o.frequency.setValueAtTime(f,t+d);g.gain.setValueAtTime(.06,t+d);g.gain.exponentialRampToValueAtTime(.001,t+d+.08);o.connect(g).connect(c.destination);o.start(t+d);o.stop(t+d+.1)})})}
 }
 const sfx = new SFX();
-const buzz = (ms=10) => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch {} };
+const buzz = (ms=10) => {
+  if (nativePost("haptics", { duration: ms })) return;
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch {}
+};
 
 /* ═══════════════════════════════════════════════════════
    SVG ICONS
@@ -949,6 +967,17 @@ export default function ArrowsGame() {
   }, [level, starsMap, bestScores, soundOn, hapticsOn, loaded]);
 
   useEffect(() => { sfx.on = soundOn; }, [soundOn]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    window.ArrowXNativeBridge = {
+      vibrate: buzz,
+      notify: notifyNative,
+    };
+    return () => {
+      delete window.ArrowXNativeBridge;
+    };
+  }, []);
 
   const vib = useCallback((ms) => { if (hapticsOn) buzz(ms); }, [hapticsOn]);
 
